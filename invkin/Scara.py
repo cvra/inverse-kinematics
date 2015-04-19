@@ -26,10 +26,28 @@ class Scara(object):
         self.theta1 = theta1
         self.theta2 = theta2
         self.x, self.y = self.forward_kinematics()
+
         return self.x, self.y
+
+    def update_tool(self, x, y):
+        self.x = x
+        self.y = y
+        self.theta1, self.theta2 = self.inverse_kinematics()
+
+        return self.theta1, self.theta2
 
     def forward_kinematics(self):
         x = self.l1 * cos(self.theta1) + self.l2 * cos(self.theta1 + self.theta2)
         y = self.l1 * sin(self.theta1) + self.l2 * sin(self.theta1 + self.theta2)
 
         return x, y
+
+    def inverse_kinematics(self):
+        l = self.x ** 2 + self.y ** 2
+        lsq = self.lsq
+        gamma = acos((l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l)))
+
+        theta1 = atan2(self.y, self.x) - gamma
+        theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), (l - lsq) / (2 * self.l1 * self.l2))
+
+        return theta1, theta2

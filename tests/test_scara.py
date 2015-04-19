@@ -39,3 +39,44 @@ class ScaraTestCase(unittest.TestCase):
         x, y = scara.update_joints(th1, th2)
         self.assertAlmostEqual(x, l2)
         self.assertAlmostEqual(y, -l1)
+
+
+    def test_invkin_second_link(self):
+        """
+        Checks that inverse kinematics works if only the second link is moving
+        """
+
+        scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0)
+
+        x = l1 + l2
+        y = 0.0
+        th1, th2 = scara.update_tool(x, y)
+        self.assertAlmostEqual(th1, 0.0)
+        self.assertAlmostEqual(th2, 0.0)
+
+        x = (l1 + l2) / 2
+        y = (l1 + l2) / 2
+        th1, th2 = scara.update_tool(x, y)
+        self.assertAlmostEqual(th1, 0.0)
+        self.assertAlmostEqual(th2, pi / 2)
+
+    def test_invkin_both_links(self):
+        """
+        Checks that inverse kinematics works when both links move
+        """
+
+        scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0)
+
+        x = (l1 + l2) / 2
+        y = -(l1 + l2) / 2
+        scara.update_tool(x, y)
+        th1, th2 = scara.inverse_kinematics()
+        self.assertAlmostEqual(th1, -pi / 2)
+        self.assertAlmostEqual(th2, pi / 2)
+
+        x = 0
+        y = l1 + l2
+        scara.update_tool(x, y)
+        th1, th2 = scara.inverse_kinematics()
+        self.assertAlmostEqual(th1, pi / 2)
+        self.assertAlmostEqual(th2, 0.0)
