@@ -1,8 +1,6 @@
 import numpy as np
 from math import sqrt, cos, sin, acos, atan2
 
-FLOAT_PRECISION = 1e-7
-
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
