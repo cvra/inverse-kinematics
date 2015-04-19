@@ -7,7 +7,7 @@ FLIP_LEFT_HAND = -1
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0, theta1=0.0, theta2=0.0, flip_x=FLIP_RIGHT_HAND):
+    def __init__(self, l1=1.0, l2=1.0, theta1=0.0, theta2=0.0, origin=(0.0, 0.0), flip_x=FLIP_RIGHT_HAND):
         """
         Input:
         l1 - length of first link
@@ -21,6 +21,7 @@ class Scara(object):
         self.lsq = l1 ** 2 + l2 ** 2
         self.theta1 = theta1
         self.theta2 = theta2
+        self.origin = origin
 
         if flip_x > 0:
             self.flip_x = FLIP_RIGHT_HAND
@@ -42,7 +43,7 @@ class Scara(object):
         self.theta2 = theta2
         self.x, self.y = self.forward_kinematics()
 
-        return self.x, self.y
+        return self.x + self.origin[0], self.y + self.origin[1]
 
     def update_tool(self, x, y):
         """
@@ -53,8 +54,8 @@ class Scara(object):
         theta1 - angle of the first link wrt ground
         theta2 - angle of the second link wrt the first
         """
-        self.x = x
-        self.y = y
+        self.x = x - self.origin[0]
+        self.y = y - self.origin[1]
         self.theta1, self.theta2 = self.inverse_kinematics()
 
         return self.theta1, self.theta2
@@ -72,11 +73,14 @@ class Scara(object):
         """
         Computes joint positions knowing tool position
         """
-        l = self.x ** 2 + self.y ** 2
+        x = self.x
+        y = self.y
+
+        l = x ** 2 + y ** 2
         lsq = self.lsq
         gamma = acos((l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l)))
 
-        theta1 = atan2(self.y, self.flip_x * self.x) - gamma
+        theta1 = atan2(y, self.flip_x * x) - gamma
         theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), (l - lsq) / (2 * self.l1 * self.l2))
 
         return theta1, theta2

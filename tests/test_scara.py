@@ -121,3 +121,40 @@ class ScaraTestCase(unittest.TestCase):
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, pi / 2)
         self.assertAlmostEqual(th2, 0.0)
+
+    def test_fwdkin_origin(self):
+        """
+        Checks that forward kinematics works with origin not at 0
+        """
+        scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0, origin=(1,1))
+
+        th1 = pi / 2
+        th2 = pi / 2
+        x, y = scara.update_joints(th1, th2)
+        self.assertAlmostEqual(x, -l2 + 1)
+        self.assertAlmostEqual(y, l1 + 1)
+
+        th1 = -pi / 2
+        th2 = pi / 2
+        x, y = scara.update_joints(th1, th2)
+        self.assertAlmostEqual(x, l2 + 1)
+        self.assertAlmostEqual(y, -l1 + 1)
+
+
+    def test_invkin_origin(self):
+        """
+        Checks that inverse kinematics works with origin not at 0
+        """
+        scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0, origin=(1,1))
+
+        x = 1 + (l1 + l2) / 2
+        y = 1 - (l1 + l2) / 2
+        th1, th2 = scara.update_tool(x, y)
+        self.assertAlmostEqual(th1, -pi / 2)
+        self.assertAlmostEqual(th2, pi / 2)
+
+        x = 1
+        y = 1 + l1 + l2
+        th1, th2 = scara.update_tool(x, y)
+        self.assertAlmostEqual(th1, pi / 2)
+        self.assertAlmostEqual(th2, 0.0)
