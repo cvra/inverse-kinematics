@@ -3,7 +3,7 @@ from math import pi, sqrt, cos, sin
 import unittest
 
 l1 = 1.0
-l2 = 1.0
+l2 = 0.5
 
 class ScaraTestCase(unittest.TestCase):
     def test_fwdkin_second_link(self):
@@ -57,8 +57,8 @@ class ScaraTestCase(unittest.TestCase):
         self.assertAlmostEqual(th1, 0.0)
         self.assertAlmostEqual(th2, 0.0)
 
-        x = (l1 + l2) / 2
-        y = (l1 + l2) / 2
+        x = l1
+        y = l2
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, 0.0)
         self.assertAlmostEqual(th2, pi / 2)
@@ -69,8 +69,8 @@ class ScaraTestCase(unittest.TestCase):
         """
         scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0)
 
-        x = (l1 + l2) / 2
-        y = -(l1 + l2) / 2
+        x = l2
+        y = - l1
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, -pi / 2)
         self.assertAlmostEqual(th2, pi / 2)
@@ -110,8 +110,8 @@ class ScaraTestCase(unittest.TestCase):
         """
         scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0, flip_x=-1)
 
-        x = -(l1 + l2) / 2
-        y = -(l1 + l2) / 2
+        x = - l2
+        y = - l1
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, -pi / 2)
         self.assertAlmostEqual(th2, pi / 2)
@@ -147,8 +147,8 @@ class ScaraTestCase(unittest.TestCase):
         """
         scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0, origin=(1,1))
 
-        x = 1 + (l1 + l2) / 2
-        y = 1 - (l1 + l2) / 2
+        x = 1 + l2
+        y = 1 - l1
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, -pi / 2)
         self.assertAlmostEqual(th2, pi / 2)
