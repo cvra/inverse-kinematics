@@ -22,7 +22,14 @@ class Scara(object):
         self.x, self.y = self.forward_kinematics()
 
     def update_joints(self, theta1, theta2):
-        "Update the joint values"
+        """
+        Update the joint values
+        Input:
+        theta1 - angle of the first link wrt ground
+        theta2 - angle of the second link wrt the first
+        Output:
+        x, y - tool position in cartesian coordinates wrt arm base
+        """
         self.theta1 = theta1
         self.theta2 = theta2
         self.x, self.y = self.forward_kinematics()
@@ -30,6 +37,14 @@ class Scara(object):
         return self.x, self.y
 
     def update_tool(self, x, y):
+        """
+        Update the tool position
+        Input:
+        x, y - tool position in cartesian coordinates wrt arm base
+        Output:
+        theta1 - angle of the first link wrt ground
+        theta2 - angle of the second link wrt the first
+        """
         self.x = x
         self.y = y
         self.theta1, self.theta2 = self.inverse_kinematics()
@@ -37,12 +52,18 @@ class Scara(object):
         return self.theta1, self.theta2
 
     def forward_kinematics(self):
+        """
+        Computes tool position knowing joint positions
+        """
         x = self.l1 * cos(self.theta1) + self.l2 * cos(self.theta1 + self.theta2)
         y = self.l1 * sin(self.theta1) + self.l2 * sin(self.theta1 + self.theta2)
 
         return x, y
 
     def inverse_kinematics(self):
+        """
+        Computes joint positions knowing tool position
+        """
         l = self.x ** 2 + self.y ** 2
         lsq = self.lsq
         gamma = acos((l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l)))
