@@ -3,6 +3,7 @@ from math import sqrt, cos, sin, acos, atan2, pi
 
 FLIP_RIGHT_HAND = 1
 FLIP_LEFT_HAND = -1
+EPSILON = 1e-2
 
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
@@ -54,10 +55,15 @@ class Scara(object):
         theta1 - angle of the first link wrt ground
         theta2 - angle of the second link wrt the first
         """
-        self.x = x - self.origin[0]
-        self.y = y - self.origin[1]
-        self.theta1, self.theta2 = self.inverse_kinematics()
+        if((x ** 2 + y ** 2) > (self.l1 + self.l2) ** 2):
+            "Target unreachable"
+            self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
+            self.y = 0 - self.origin[1]
+        else:
+            self.x = x - self.origin[0]
+            self.y = y - self.origin[1]
 
+        self.theta1, self.theta2 = self.inverse_kinematics()
         return self.theta1, self.theta2
 
     def forward_kinematics(self):
@@ -76,9 +82,17 @@ class Scara(object):
         x = self.x
         y = self.y
 
+        if(x == 0 and y == 0):
+            return self.theta1, pi
+
         l = x ** 2 + y ** 2
         lsq = self.lsq
-        gamma = acos((l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l)))
+
+        cos_gamma = (l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l))
+        if(cos_gamma > 1 - EPSILON or cos_gamma < -1 + EPSILON):
+            gamma = 0.0
+        else:
+            gamma = acos(cos_gamma)
 
         theta1 = atan2(y, self.flip_x * x) - gamma
         theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), (l - lsq) / (2 * self.l1 * self.l2))
