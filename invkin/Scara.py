@@ -98,3 +98,12 @@ class Scara(object):
         theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), (l - lsq) / (2 * self.l1 * self.l2))
 
         return theta1, theta2
+
+    def get_detailed_pos(self):
+        """
+        Returns origin_x, origin_y, x1, y1, x2, y2
+        """
+        x1 = self.flip_x * self.l1 * cos(self.theta1) + self.origin[0]
+        y1 = self.l1 * sin(self.theta1) + self.origin[1]
+
+        return self.origin[0], self.origin[1], x1, y1, self.x, self.y
