@@ -61,6 +61,8 @@ class Scara(object):
             "Target unreachable"
             self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
             self.y = 0 - self.origin[1]
+            self.theta1, self.theta2 = self.inverse_kinematics()
+            raise ValueError('Target unreachable')
         else:
             self.x = x - self.origin[0]
             self.y = y - self.origin[1]
@@ -93,6 +95,8 @@ class Scara(object):
         lsq = self.lsq
 
         cos_gamma = (l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l))
+
+        # Numerical errors can make abs(cos_gamma) > 1
         if(cos_gamma > 1 - EPSILON or cos_gamma < -1 + EPSILON):
             gamma = 0.0
         else:

@@ -158,3 +158,14 @@ class ScaraTestCase(unittest.TestCase):
         th1, th2 = scara.update_tool(x, y)
         self.assertAlmostEqual(th1, pi / 2)
         self.assertAlmostEqual(th2, 0.0)
+
+    def test_target_unreachable(self):
+        """
+        Checks that an out of range target is detected as unreachable
+        """
+        scara = Scara.Scara(l1=l1, l2=l2, theta1=0.0, theta2=0.0)
+
+        x = l1 + l2 + 1
+        y = 0
+        with self.assertRaises(ValueError):
+            th1, th2 = scara.update_tool(x, y)
