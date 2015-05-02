@@ -1,5 +1,5 @@
 from invkin.Scara import Scara
-from math import pi
+from math import pi, cos, sin
 
 GRIPPER_ANGULAR_SPACING = 2 * pi / 3
 FLIP_RIGHT_HAND = 1
@@ -114,3 +114,14 @@ class DebraArm(Scara):
         theta3 = pi / 2 - (gripper_hdg + theta1 + theta2)
 
         return theta1, theta2, z, theta3
+
+    def get_detailed_pos(self, l3):
+        """
+        Returns origin_x, origin_y, x1, y1, x2, y2
+        """
+        ox, oy, x1, y1, x2, y2 = super(DebraArm, self).get_detailed_pos()
+
+        x3 = self.x + self.flip_x * l3 * cos(self.theta1 + self.theta2 + self.theta3)
+        y3 = self.y + l3 * sin(self.theta1 + self.theta2 + self.theta3)
+
+        return ox, oy, self.origin[2], x1, y1, x2, y2, x3, y3, self.z
