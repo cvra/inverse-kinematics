@@ -8,7 +8,8 @@ EPSILON = 1e-2
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0, theta1=0.0, theta2=0.0, origin=(0.0, 0.0), flip_x=FLIP_RIGHT_HAND):
+    def __init__(self, l1=1.0, l2=1.0, theta1=0.0, theta2=0.0, origin=(0.0, 0.0), \
+                 flip_x=FLIP_RIGHT_HAND):
         """
         Input:
         l1 - length of first link
@@ -71,8 +72,10 @@ class Scara(object):
         """
         Computes tool position knowing joint positions
         """
-        x = self.flip_x * (self.l1 * cos(self.theta1) + self.l2 * cos(self.theta1 + self.theta2))
-        y = self.l1 * sin(self.theta1) + self.l2 * sin(self.theta1 + self.theta2)
+        x = self.flip_x * (self.l1 * cos(self.theta1) \
+            + self.l2 * cos(self.theta1 + self.theta2))
+        y = self.l1 * sin(self.theta1) \
+            + self.l2 * sin(self.theta1 + self.theta2)
 
         return x, y
 
@@ -96,7 +99,8 @@ class Scara(object):
             gamma = acos(cos_gamma)
 
         theta1 = atan2(y, self.flip_x * x) - gamma
-        theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), (l - lsq) / (2 * self.l1 * self.l2))
+        theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
+                            (l - lsq) / (2 * self.l1 * self.l2))
 
         return theta1, theta2
 
