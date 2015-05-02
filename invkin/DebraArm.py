@@ -62,6 +62,33 @@ class DebraArm(Scara):
                self.z + self.origin[2], \
                self.gripper_hdg
 
+    def update_tool(self, x, y, z, gripper_hdg):
+        """
+        Update the tool position
+        Input:
+        x, y, z - tool position in cartesian coordinates wrt arm base
+        gripper_hdg - heading of the hand wrt heading of robot
+        Output:
+        theta1 - angle of the first link wrt ground
+        theta2 - angle of the second link wrt the first
+        z - position on z axis
+        theta3 - angle of the hand wrt to the second link
+        """
+        norm = (x - self.origin[0]) ** 2 + (y - self.origin[0]) ** 2
+        if(norm > (self.l1 + self.l2) ** 2):
+            "Target unreachable"
+            self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
+            self.y = 0 - self.origin[1]
+        else:
+            self.x = x - self.origin[0]
+            self.y = y - self.origin[1]
+
+        self.z = z
+        self.gripper_hdg = gripper_hdg
+
+        self.theta1, self.theta2, self.z, self.theta3 = self.inverse_kinematics()
+        return self.theta1, self.theta2, self.z, self.theta3
+
     def forward_kinematics(self):
         """
         Computes tool position knowing joint positions
@@ -72,3 +99,18 @@ class DebraArm(Scara):
         gripper_hdg = (pi / 2) - (self.theta1 + self.theta2 + self.theta3)
 
         return x, y, z, gripper_hdg
+
+    def inverse_kinematics(self):
+        """
+        Computes joint positions knowing tool position
+        """
+        x = self.x
+        y = self.y
+        z = self.z
+        gripper_hdg = self.gripper_hdg
+
+        theta1, theta2 = super(DebraArm, self).inverse_kinematics()
+
+        theta3 = pi / 2 - (gripper_hdg + theta1 + theta2)
+
+        return theta1, theta2, z, theta3
