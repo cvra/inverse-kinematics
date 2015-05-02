@@ -53,7 +53,11 @@ def main():
             y = - (y - HEIGHT/2) / PX_PER_METER
             print("x: ", x, ", y: ", y)
 
-            th1, th2 = scara.update_tool(x, y)
+            try:
+                th1, th2 = scara.update_tool(x, y)
+            except ValueError:
+                pass
+
             print("scara: ", "x:", scara.x, "y:", scara.y, "th1:", scara.theta1, "th2:", scara.theta2)
 
             # Draw robot

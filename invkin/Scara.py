@@ -60,6 +60,7 @@ class Scara(object):
             "Target unreachable"
             self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
             self.y = 0 - self.origin[1]
+            self.theta1, self.theta2 = self.inverse_kinematics()
             raise ValueError('Target unreachable')
         else:
             self.x = x - self.origin[0]
