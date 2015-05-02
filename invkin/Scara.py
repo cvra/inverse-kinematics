@@ -55,7 +55,8 @@ class Scara(object):
         theta1 - angle of the first link wrt ground
         theta2 - angle of the second link wrt the first
         """
-        if((x ** 2 + y ** 2) > (self.l1 + self.l2) ** 2):
+        norm = (x - self.origin[0]) ** 2 + (y - self.origin[0]) ** 2
+        if(norm > (self.l1 + self.l2) ** 2):
             "Target unreachable"
             self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
             self.y = 0 - self.origin[1]
