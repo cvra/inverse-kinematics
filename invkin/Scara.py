@@ -89,6 +89,8 @@ class Scara(object):
         lsq = self.lsq
 
         cos_gamma = (l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l))
+
+        # Numerical errors can make abs(cos_gamma) > 1
         if(cos_gamma > 1 - EPSILON or cos_gamma < -1 + EPSILON):
             gamma = 0.0
         else:
