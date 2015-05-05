@@ -1,9 +1,10 @@
 import pygame, sys
+from invkin.Datatypes import *
 from invkin import DebraArm
 from math import cos, sin, pi
 
 PX_PER_METER = 100
-L1 = 1.0
+L1 = 1.5
 L2 = 1.0
 L3 = 0.2
 GRIPPER_HEADING = 0
@@ -27,13 +28,13 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    arm = DebraArm.DebraArm(l1=L1, l2=L2, theta1=0, theta2=0, z=0, theta3=0, flip_x=1)
-    tool_x, tool_y, tool_z, tool_hdg = arm.forward_kinematics()
-    th1, th2, z, th3 = arm.inverse_kinematics()
+    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1)
+    tool = arm.forward_kinematics()
+    joints = arm.inverse_kinematics()
 
     # Draw robot
-    o_x, o_y, o_z, x1, y1, x2, y2, x3, y3, z = arm.get_detailed_pos(L3)
-    draw_arm(o_x, o_y, x1, y1, x2, y2, x3, y3)
+    origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
+    draw_arm(origin, p1, p2, p3)
 
     pygame.display.update()
 
@@ -53,23 +54,29 @@ def main():
             (x, y) = pygame.mouse.get_pos()
             x = (x - WIDTH/2) / PX_PER_METER
             y = - (y - HEIGHT/2) / PX_PER_METER
-            print("x: ", x, ", y: ", y)
+            print("cursor: x: ", x, ", y: ", y)
 
-            th1, th2, z, th3 = arm.update_tool(x, y, z, GRIPPER_HEADING)
-            print("arm: ", "x:", arm.x, "y:", arm.y, "th1:", arm.theta1, "th2:", arm.theta2)
+            try:
+                tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
+                joints = arm.update_tool(tool)
+            except ValueError:
+                pass
+
+            print("arm: ", "x:", arm.tool.x, "y:", arm.tool.y, \
+                  "th1:", arm.joints.theta1, "th2:", arm.joints.theta2)
 
             # Draw robot
-            o_x, o_y, o_z, x1, y1, x2, y2, x3, y3, z = arm.get_detailed_pos(L3)
-            draw_arm(o_x, o_y, x1, y1, x2, y2, x3, y3)
+            origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
+            draw_arm(origin, p1, p2, p3)
 
             pygame.display.update()
 
-def draw_arm(origin_x, origin_y, l1_x, l1_y, l2_x, l2_y, l3_x, l3_y):
+def draw_arm(p0, p1, p2, p3):
     "draw arm state"
 
-    draw_line(origin_x, origin_y, l1_x, l1_y)
-    draw_line(l1_x, l1_y, l2_x, l2_y)
-    draw_line(l2_x, l2_y, l3_x, l3_y)
+    draw_line(p0.x, p0.y, p1.x, p1.y)
+    draw_line(p1.x, p1.y, p2.x, p2.y)
+    draw_line(p2.x, p2.y, p3.x, p3.y)
 
 def draw_line(pos1_x, pos1_y, pos2_x, pos2_y):
     "draw line from pos1 to pos2"
