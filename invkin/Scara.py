@@ -10,8 +10,8 @@ class Scara(object):
         Input:
         l1 - length of first link
         l2 - lenght of second link
-        theta1 - angle of the first link wrt ground
-        theta2 - angle of the second link wrt the first
+        q0 - initial positions of joints
+        origin - position of the base of the arm in carthesian space
         flip_x - vertical flip (positive for right hand, negative for left hand)
         """
         self.l1 = l1
@@ -31,10 +31,9 @@ class Scara(object):
         """
         Update the joint values
         Input:
-        theta1 - angle of the first link wrt ground
-        theta2 - angle of the second link wrt the first
+        new_joints - new positions of joints
         Output:
-        x, y - tool position in cartesian coordinates wrt arm base
+        tool - tool position in cartesian coordinates wrt arm base
         """
         self.joints = new_joints
         self.tool = self.forward_kinematics()
@@ -45,10 +44,9 @@ class Scara(object):
         """
         Update the tool position
         Input:
-        x, y - tool position in cartesian coordinates wrt arm base
+        new_tool - tool position in cartesian coordinates wrt arm base
         Output:
-        theta1 - angle of the first link wrt ground
-        theta2 - angle of the second link wrt the first
+        new_joints - position of joints
         """
         norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
         if(norm > (self.l1 + self.l2) ** 2 or norm < (self.l1 - self.l2) ** 2):
@@ -104,7 +102,7 @@ class Scara(object):
 
     def get_detailed_pos(self):
         """
-        Returns origin_x, origin_y, x1, y1, x2, y2
+        Returns origin, position of end of link 1, position of end of link 2
         """
         x1 = self.flip_x * self.l1 * cos(self.joints.theta1) + self.origin.x
         y1 = self.l1 * sin(self.joints.theta1) + self.origin.y
