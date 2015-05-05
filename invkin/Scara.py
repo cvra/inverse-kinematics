@@ -1,15 +1,11 @@
-import numpy as np
+from invkin.Datatypes import *
 from math import sqrt, cos, sin, acos, atan2, pi
-
-FLIP_RIGHT_HAND = 1
-FLIP_LEFT_HAND = -1
-EPSILON = 1e-2
 
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0, theta1=0.0, theta2=0.0, origin=(0.0, 0.0), \
-                 flip_x=FLIP_RIGHT_HAND):
+    def __init__(self, l1=1.0, l2=1.0, q0=JointSpacePoint(0,0,0,0), \
+                 origin=Vector2D(0,0), flip_x=FLIP_RIGHT_HAND):
         """
         Input:
         l1 - length of first link
@@ -21,18 +17,17 @@ class Scara(object):
         self.l1 = l1
         self.l2 = l2
         self.lsq = l1 ** 2 + l2 ** 2
-        self.theta1 = theta1
-        self.theta2 = theta2
+        self.joints = q0
         self.origin = origin
 
-        if flip_x > 0:
+        if flip_x >= 0:
             self.flip_x = FLIP_RIGHT_HAND
         else:
             self.flip_x = FLIP_LEFT_HAND
 
-        self.x, self.y = self.forward_kinematics()
+        self.tool = self.forward_kinematics()
 
-    def update_joints(self, theta1, theta2):
+    def update_joints(self, new_joints):
         """
         Update the joint values
         Input:
@@ -41,13 +36,12 @@ class Scara(object):
         Output:
         x, y - tool position in cartesian coordinates wrt arm base
         """
-        self.theta1 = theta1
-        self.theta2 = theta2
-        self.x, self.y = self.forward_kinematics()
+        self.joints = new_joints
+        self.tool = self.forward_kinematics()
 
-        return self.x + self.origin[0], self.y + self.origin[1]
+        return self.tool
 
-    def update_tool(self, x, y):
+    def update_tool(self, new_tool):
         """
         Update the tool position
         Input:
@@ -56,40 +50,43 @@ class Scara(object):
         theta1 - angle of the first link wrt ground
         theta2 - angle of the second link wrt the first
         """
-        norm = (x - self.origin[0]) ** 2 + (y - self.origin[0]) ** 2
+        norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
         if(norm > (self.l1 + self.l2) ** 2):
             "Target unreachable"
-            self.x = self.flip_x * (self.l1 + self.l2) - self.origin[0]
-            self.y = 0 - self.origin[1]
-            self.theta1, self.theta2 = self.inverse_kinematics()
+            x = self.flip_x * (self.l1 + self.l2) + self.origin.x
+            y = 0 + self.origin.y
+            self.tool = RobotSpacePoint(x, y, 0, 0)
+            self.joints = self.inverse_kinematics()
             raise ValueError('Target unreachable')
-        else:
-            self.x = x - self.origin[0]
-            self.y = y - self.origin[1]
 
-        self.theta1, self.theta2 = self.inverse_kinematics()
-        return self.theta1, self.theta2
+        self.tool = new_tool
+        self.joints = self.inverse_kinematics()
+
+        return self.joints
 
     def forward_kinematics(self):
         """
         Computes tool position knowing joint positions
         """
-        x = self.flip_x * (self.l1 * cos(self.theta1) \
-            + self.l2 * cos(self.theta1 + self.theta2))
-        y = self.l1 * sin(self.theta1) \
-            + self.l2 * sin(self.theta1 + self.theta2)
+        x = self.flip_x * (self.l1 * cos(self.joints.theta1) \
+            + self.l2 * cos(self.joints.theta1 + self.joints.theta2))
+        y = self.l1 * sin(self.joints.theta1) \
+            + self.l2 * sin(self.joints.theta1 + self.joints.theta2)
 
-        return x, y
+        x += self.origin.x
+        y += self.origin.y
+
+        return RobotSpacePoint(x, y, 0, 0)
 
     def inverse_kinematics(self):
         """
         Computes joint positions knowing tool position
         """
-        x = self.x
-        y = self.y
+        x = self.tool.x - self.origin.x
+        y = self.tool.y - self.origin.y
 
         if(x == 0 and y == 0):
-            return self.theta1, pi
+            return JointSpacePoint(self.joints.theta1, pi, 0, 0)
 
         l = x ** 2 + y ** 2
         lsq = self.lsq
@@ -106,13 +103,13 @@ class Scara(object):
         theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
                             (l - lsq) / (2 * self.l1 * self.l2))
 
-        return theta1, theta2
+        return JointSpacePoint(theta1, theta2, 0, 0)
 
     def get_detailed_pos(self):
         """
         Returns origin_x, origin_y, x1, y1, x2, y2
         """
-        x1 = self.flip_x * self.l1 * cos(self.theta1) + self.origin[0]
-        y1 = self.l1 * sin(self.theta1) + self.origin[1]
+        x1 = self.flip_x * self.l1 * cos(self.joints.theta1) + self.origin.x
+        y1 = self.l1 * sin(self.joints.theta1) + self.origin.y
 
-        return self.origin[0], self.origin[1], x1, y1, self.x, self.y
+        return self.origin, Vector2D(x1, y1), Vector2D(self.tool.x, self.tool.y)

@@ -1,10 +1,11 @@
 import pygame, sys
-from invkin import Scara
+from invkin.Scara import *
+from invkin.Datatypes import *
 from math import cos, sin
 
 PX_PER_METER = 100
 L1 = 1.0
-L2 = 1.0
+L2 = 0.5
 WIDTH = int(2 * (L1 + L2) * PX_PER_METER)
 HEIGHT = int(2 * (L1 + L2) * PX_PER_METER)
 
@@ -25,13 +26,13 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    scara = Scara.Scara(l1=L1, l2=L2, theta1=0.0, theta2=0.0, flip_x=-1)
-    tool_x, tool_y = scara.forward_kinematics()
-    th1, th2 = scara.inverse_kinematics()
+    scara = Scara(l1=L1, l2=L2, flip_x=-1)
+    tool = scara.forward_kinematics()
+    joints = scara.inverse_kinematics()
 
     # Draw robot
-    o_x, o_y, x1, y1, x2, y2 = scara.get_detailed_pos()
-    draw_scara(o_x, o_y, x1, y1, x2, y2)
+    p0, p1, p2 = scara.get_detailed_pos()
+    draw_scara(p0, p1, p2)
 
     pygame.display.update()
 
@@ -51,26 +52,28 @@ def main():
             (x, y) = pygame.mouse.get_pos()
             x = (x - WIDTH/2) / PX_PER_METER
             y = - (y - HEIGHT/2) / PX_PER_METER
-            print("x: ", x, ", y: ", y)
+            print("cursor: x: ", x, ", y: ", y)
 
             try:
-                th1, th2 = scara.update_tool(x, y)
+                tool = RobotSpacePoint(x, y, 0, 0)
+                joints = scara.update_tool(tool)
             except ValueError:
                 pass
 
-            print("scara: ", "x:", scara.x, "y:", scara.y, "th1:", scara.theta1, "th2:", scara.theta2)
+            print("scara: ", "x:", scara.tool.x, "y:", scara.tool.y, \
+                  "th1:", scara.joints.theta1, "th2:", scara.joints.theta2)
 
             # Draw robot
-            o_x, o_y, x1, y1, x2, y2 = scara.get_detailed_pos()
-            draw_scara(o_x, o_y, x1, y1, x2, y2)
+            origin, p1, p2 = scara.get_detailed_pos()
+            draw_scara(origin, p1, p2)
 
             pygame.display.update()
 
-def draw_scara(origin_x, origin_y, l1_x, l1_y, l2_x, l2_y):
+def draw_scara(p0, p1, p2):
     "draw scara state"
 
-    draw_line(origin_x, origin_y, l1_x, l1_y)
-    draw_line(l1_x, l1_y, l2_x, l2_y)
+    draw_line(p0.x, p0.y, p1.x, p1.y)
+    draw_line(p1.x, p1.y, p2.x, p2.y)
 
 def draw_line(pos1_x, pos1_y, pos2_x, pos2_y):
     "draw line from pos1 to pos2"
