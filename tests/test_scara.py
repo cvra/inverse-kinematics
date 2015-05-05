@@ -155,3 +155,7 @@ class ScaraTestCase(unittest.TestCase):
         tool = RobotSpacePoint(1+l1+l2, 0, 0, 0)
         with self.assertRaises(ValueError):
             joints = scara.update_tool(tool)
+
+        tool = RobotSpacePoint(0, 0, 0, 0)
+        with self.assertRaises(ValueError):
+            joints = scara.update_tool(tool)

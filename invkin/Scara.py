@@ -51,12 +51,9 @@ class Scara(object):
         theta2 - angle of the second link wrt the first
         """
         norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
-        if(norm > (self.l1 + self.l2) ** 2):
+        if(norm > (self.l1 + self.l2) ** 2 or norm < (self.l1 - self.l2) ** 2):
             "Target unreachable"
-            x = self.flip_x * (self.l1 + self.l2) + self.origin.x
-            y = 0 + self.origin.y
-            self.tool = RobotSpacePoint(x, y, 0, 0)
-            self.joints = self.inverse_kinematics()
+            self.tool = self.forward_kinematics()
             raise ValueError('Target unreachable')
 
         self.tool = new_tool
