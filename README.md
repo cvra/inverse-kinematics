@@ -8,3 +8,12 @@ To run it, you need to install pygame (see http://www.pygame.org/wiki/CompileUbu
 ```sh
 python3 scara_visualiser.py
 ```
+or
+```sh
+python3 debra_arm_visualiser.py
+```
+
+You can also test the path planner by running:
+```sh
+python3 debra_arm_planner_visualiser.py
+```
