@@ -28,7 +28,7 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1)
+    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1, flip_elbow=1)
     tool = arm.forward_kinematics()
     joints = arm.inverse_kinematics()
 

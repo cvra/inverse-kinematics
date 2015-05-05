@@ -5,8 +5,11 @@ from math import pi, cos, sin
 class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
-    def __init__(self, l1=1.0, l2=1.0, q0=JointSpacePoint(0,0,0,0), \
-                 origin=Vector3D(0,0,0), flip_x=FLIP_RIGHT_HAND):
+    def __init__(self, l1=1.0, l2=1.0,
+                 q0=JointSpacePoint(0,0,0,0), \
+                 origin=Vector3D(0,0,0),
+                 flip_x=FLIP_RIGHT_HAND,
+                 flip_elbow=ELBOW_BACK,):
         """
         Input:
         l1 - length of first link
@@ -25,6 +28,11 @@ class DebraArm(Scara):
             self.flip_x = FLIP_RIGHT_HAND
         else:
             self.flip_x = FLIP_LEFT_HAND
+
+        if flip_elbow >= 0:
+            self.flip_elbow = ELBOW_BACK
+        else:
+            self.flip_elbow = ELBOW_FRONT
 
         self.tool = self.forward_kinematics()
 

@@ -26,7 +26,7 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    scara = Scara(l1=L1, l2=L2, flip_x=-1)
+    scara = Scara(l1=L1, l2=L2, flip_x=-1, flip_elbow=-1)
     tool = scara.forward_kinematics()
     joints = scara.inverse_kinematics()
 

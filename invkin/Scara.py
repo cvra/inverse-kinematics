@@ -4,8 +4,11 @@ from math import sqrt, cos, sin, acos, atan2, pi
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0, q0=JointSpacePoint(0,0,0,0), \
-                 origin=Vector2D(0,0), flip_x=FLIP_RIGHT_HAND):
+    def __init__(self, l1=1.0, l2=1.0,
+                 q0=JointSpacePoint(0,0,0,0), \
+                 origin=Vector2D(0,0),
+                 flip_x=FLIP_RIGHT_HAND,
+                 flip_elbow=ELBOW_BACK):
         """
         Input:
         l1 - length of first link
@@ -24,6 +27,11 @@ class Scara(object):
             self.flip_x = FLIP_RIGHT_HAND
         else:
             self.flip_x = FLIP_LEFT_HAND
+
+        if flip_elbow >= 0:
+            self.flip_elbow = ELBOW_BACK
+        else:
+            self.flip_elbow = ELBOW_FRONT
 
         self.tool = self.forward_kinematics()
 
@@ -92,11 +100,12 @@ class Scara(object):
         if(cos_gamma > 1 - EPSILON or cos_gamma < -1 + EPSILON):
             gamma = 0.0
         else:
-            gamma = acos(cos_gamma)
+            gamma = self.flip_elbow * acos(cos_gamma)
 
         theta1 = atan2(y, self.flip_x * x) - gamma
-        theta2 = atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
-                            (l - lsq) / (2 * self.l1 * self.l2))
+        theta2 = self.flip_elbow * \
+                    atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
+                          (l - lsq) / (2 * self.l1 * self.l2))
 
         return JointSpacePoint(theta1, theta2, 0, 0)
 
