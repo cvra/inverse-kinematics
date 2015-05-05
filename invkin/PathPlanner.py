@@ -1,15 +1,16 @@
+from invkin.Datatypes import *
 from invkin.DebraArm import DebraArm
 from math import pi, cos, sin
 import numpy as np
 
-def get_path(arm,
-             start_pose,
-             start_vel,
-             target_pose,
-             target_vel,
-             duration,
-             delta_t):
-    "Moves a DebraArm"
+def get_path_joint_space(arm,
+                         start_pose,
+                         start_vel,
+                         target_pose,
+                         target_vel,
+                         duration,
+                         delta_t):
+    "Moves a DebraArm by trajectory planning in joint space"
     start_joints = arm.update_tool(start_pose)
     target_joints = arm.update_tool(target_pose)
 
@@ -27,6 +28,55 @@ def get_path(arm,
                              duration, delta_t)
 
     return traj_theta1, traj_theta2, traj_z, traj_theta3
+
+def get_path_robot_space(arm,
+                         start_pose,
+                         start_vel,
+                         target_pose,
+                         target_vel,
+                         duration,
+                         delta_t):
+    "Moves a DebraArm by trajectory planning in robot space"
+    traj_x, traj_y = get_path_tool(arm,
+                                   start_pose,
+                                   start_vel,
+                                   target_pose,
+                                   target_vel,
+                                   duration,
+                                   delta_t)
+
+    traj_theta1 = []
+    traj_theta2 = []
+    traj_z = []
+    traj_theta3 = []
+
+    for x, y in zip(traj_x, traj_y):
+        tool = RobotSpacePoint(x[1], y[1], 0, 0)
+        joints = arm.update_tool(tool)
+
+        traj_theta1.append([x[0], joints.theta1, 0, 0])
+        traj_theta2.append([x[0], joints.theta2, 0, 0])
+        traj_z.append([x[0], joints.z, 0, 0])
+        traj_theta3.append([x[0], joints.theta3, 0, 0])
+
+    return traj_theta1, traj_theta2, traj_z, traj_theta3
+
+def get_path_tool(arm,
+                  start_pose,
+                  start_vel,
+                  target_pose,
+                  target_vel,
+                  duration,
+                  delta_t):
+
+    traj_x = move_joint(start_pose.x, start_vel.x,
+                        target_pose.x, target_vel.x,
+                        duration, delta_t)
+    traj_y = move_joint(start_pose.y, start_vel.y,
+                        target_pose.y, target_vel.y,
+                        duration, delta_t)
+
+    return traj_x, traj_y
 
 def move_joint(start_pos,
                start_vel,
