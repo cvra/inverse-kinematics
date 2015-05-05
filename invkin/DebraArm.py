@@ -34,9 +34,9 @@ class DebraArm(Scara):
         else:
             self.flip_elbow = ELBOW_FRONT
 
-        self.tool = self.forward_kinematics()
+        self.tool = self.get_tool()
 
-    def update_joints(self, new_joints):
+    def forward_kinematics(self, new_joints):
         """
         Update the joint values
         Input:
@@ -45,11 +45,11 @@ class DebraArm(Scara):
         tool - tool position in cartesian coordinates wrt arm base
         """
         self.joints = new_joints
-        self.tool = self.forward_kinematics()
+        self.tool = self.get_tool()
 
         return self.tool
 
-    def update_tool(self, new_tool):
+    def inverse_kinematics(self, new_tool):
         """
         Update the tool position
         Input:
@@ -60,19 +60,19 @@ class DebraArm(Scara):
         norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
         if(norm > (self.l1 + self.l2) ** 2 or norm < (self.l1 - self.l2) ** 2):
             "Target unreachable"
-            self.tool = self.forward_kinematics()
+            self.tool = self.get_tool()
             raise ValueError('Target unreachable')
 
         self.tool = new_tool
-        self.joints = self.inverse_kinematics()
+        self.joints = self.get_joints()
 
         return self.joints
 
-    def forward_kinematics(self):
+    def get_tool(self):
         """
         Computes tool position knowing joint positions
         """
-        tool = super(DebraArm, self).forward_kinematics()
+        tool = super(DebraArm, self).get_tool()
 
         grp_hdg = (pi / 2) - (self.joints.theta1 + self.joints.theta2 \
                                                  + self.joints.theta3)
@@ -80,7 +80,7 @@ class DebraArm(Scara):
 
         return tool
 
-    def inverse_kinematics(self):
+    def get_joints(self):
         """
         Computes joint positions knowing tool position
         """
@@ -89,7 +89,7 @@ class DebraArm(Scara):
         z = self.tool.z - self.origin.z
         gripper_hdg = self.tool.gripper_hdg
 
-        joints = super(DebraArm, self).inverse_kinematics()
+        joints = super(DebraArm, self).get_joints()
 
         th3 = pi / 2 - (gripper_hdg + joints.theta1 + joints.theta2)
         joints = joints._replace(z=z, theta3=th3)

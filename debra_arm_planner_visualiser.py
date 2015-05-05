@@ -41,9 +41,9 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1, flip_elbow=-1)
-    tool = arm.forward_kinematics()
-    joints = arm.inverse_kinematics()
+    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=1, flip_elbow=1)
+    tool = arm.get_tool()
+    joints = arm.get_joints()
 
     # Draw robot
     origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
@@ -98,7 +98,7 @@ def draw_trajectory(arm, path_th1, path_th2, path_z, path_th3, dt):
     "draw trajectory"
     for th1, th2, z, th3 in zip(path_th1, path_th2, path_z, path_th3):
         joints = JointSpacePoint(th1[1], th2[1], z[1], th3[1])
-        tool = arm.update_joints(joints)
+        tool = arm.forward_kinematics(joints)
         get_robot_new_state(arm, tool)
 
         print("arm: ", "x:", arm.tool.x, "y:", arm.tool.y, \
@@ -115,9 +115,9 @@ def draw_trajectory(arm, path_th1, path_th2, path_z, path_th3, dt):
 def get_robot_new_state(arm, new_tool):
     "get robot's current state"
     try:
-        return arm.update_tool(new_tool)
+        return arm.inverse_kinematics(new_tool)
     except ValueError:
-        return arm.inverse_kinematics()
+        return arm.get_joints()
 
 def get_cursor_pos():
     "get cursor position"

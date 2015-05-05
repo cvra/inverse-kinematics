@@ -11,8 +11,8 @@ def get_path_joint_space(arm,
                          duration,
                          delta_t):
     "Moves a DebraArm by trajectory planning in joint space"
-    start_joints = arm.update_tool(start_pose)
-    target_joints = arm.update_tool(target_pose)
+    start_joints = arm.inverse_kinematics(start_pose)
+    target_joints = arm.inverse_kinematics(target_pose)
 
     traj_theta1 = move_joint(start_joints.theta1, 0,
                              target_joints.theta1, 0,
@@ -52,7 +52,7 @@ def get_path_robot_space(arm,
 
     for x, y in zip(traj_x, traj_y):
         tool = RobotSpacePoint(x[1], y[1], 0, 0)
-        joints = arm.update_tool(tool)
+        joints = arm.inverse_kinematics(tool)
 
         traj_theta1.append([x[0], joints.theta1, 0, 0])
         traj_theta2.append([x[0], joints.theta2, 0, 0])

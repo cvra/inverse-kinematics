@@ -18,7 +18,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.1
         th3 = pi / 2
         joints = JointSpacePoint(th1, th2, z, th3)
-        tool = arm.update_joints(joints)
+        tool = arm.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, -l2)
         self.assertAlmostEqual(tool.y, l1)
         self.assertAlmostEqual(tool.z, 0.1)
@@ -29,7 +29,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.2
         th3 = pi / 2
         joints = JointSpacePoint(th1, th2, z, th3)
-        tool = arm.update_joints(joints)
+        tool = arm.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l2)
         self.assertAlmostEqual(tool.y, -l1)
         self.assertAlmostEqual(tool.z, 0.2)
@@ -46,7 +46,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.1
         grp_hdg = 0
         tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.update_tool(tool)
+        joints = arm.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, -pi / 2)
         self.assertAlmostEqual(joints.theta2, pi / 2)
         self.assertAlmostEqual(joints.z, 0.1)
@@ -57,7 +57,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.2
         grp_hdg = 0
         tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.update_tool(tool)
+        joints = arm.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, pi / 2)
         self.assertAlmostEqual(joints.theta2, 0.0)
         self.assertAlmostEqual(joints.z, 0.2)
@@ -74,7 +74,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.1
         th3 = pi / 2
         joints = JointSpacePoint(th1, th2, z, th3)
-        tool = arm.update_joints(joints)
+        tool = arm.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, -l2 + 1)
         self.assertAlmostEqual(tool.y, l1 + 1)
         self.assertAlmostEqual(tool.z, 0.1 + 1)
@@ -85,7 +85,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 0.2
         th3 = pi / 2
         joints = JointSpacePoint(th1, th2, z, th3)
-        tool = arm.update_joints(joints)
+        tool = arm.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l2 + 1)
         self.assertAlmostEqual(tool.y, -l1 + 1)
         self.assertAlmostEqual(tool.z, 0.2 + 1)
@@ -101,7 +101,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 1 + 0.1
         grp_hdg = 0
         tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.update_tool(tool)
+        joints = arm.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, -pi / 2)
         self.assertAlmostEqual(joints.theta2, pi / 2)
         self.assertAlmostEqual(joints.z, 0.1)
@@ -112,7 +112,7 @@ class DebraArmTestCase(unittest.TestCase):
         z = 1 + 0.2
         grp_hdg = 0
         tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.update_tool(tool)
+        joints = arm.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, pi / 2)
         self.assertAlmostEqual(joints.theta2, 0)
         self.assertAlmostEqual(joints.z, 0.2)
@@ -126,9 +126,9 @@ class DebraArmTestCase(unittest.TestCase):
 
         tool = RobotSpacePoint(1+l1+l2, 0, 0, 0)
         with self.assertRaises(ValueError):
-            joints = arm.update_tool(tool)
+            joints = arm.inverse_kinematics(tool)
 
         tool = RobotSpacePoint(0, 0, 0, 0)
         with self.assertRaises(ValueError):
-            joints = arm.update_tool(tool)
+            joints = arm.inverse_kinematics(tool)
 

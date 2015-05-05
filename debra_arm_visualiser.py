@@ -29,8 +29,8 @@ def main():
     origin_x, origin_y = 0.0, 0.0
 
     arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1, flip_elbow=1)
-    tool = arm.forward_kinematics()
-    joints = arm.inverse_kinematics()
+    tool = arm.get_tool()
+    joints = arm.get_joints()
 
     # Draw robot
     origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
@@ -58,7 +58,7 @@ def main():
 
             try:
                 tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
-                joints = arm.update_tool(tool)
+                joints = arm.inverse_kinematics(tool)
             except ValueError:
                 pass
 

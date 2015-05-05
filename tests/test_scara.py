@@ -13,17 +13,17 @@ class ScaraTestCase(unittest.TestCase):
         """
         scara = Scara.Scara(l1=l1, l2=l2)
 
-        tool = scara.forward_kinematics()
+        tool = scara.get_tool()
         self.assertAlmostEqual(tool.x, l1 + l2)
         self.assertAlmostEqual(tool.y, 0.0)
 
         joints = JointSpacePoint(0, -pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l1 + l2 * cos(joints.theta2))
         self.assertAlmostEqual(tool.y, l2 * sin(joints.theta2))
 
         joints = JointSpacePoint(0, pi/4, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l1 + l2 * cos(joints.theta2))
         self.assertAlmostEqual(tool.y, l2 * sin(joints.theta2))
 
@@ -34,12 +34,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2)
 
         joints = JointSpacePoint(pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, -l2)
         self.assertAlmostEqual(tool.y, l1)
 
         joints = JointSpacePoint(-pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l2)
         self.assertAlmostEqual(tool.y, -l1)
 
@@ -51,12 +51,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2)
 
         tool = RobotSpacePoint(l1+l2, 0, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, 0.0)
         self.assertAlmostEqual(joints.theta2, 0.0)
 
         tool = RobotSpacePoint(l1, l2, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, 0.0)
         self.assertAlmostEqual(joints.theta2, pi / 2)
 
@@ -67,12 +67,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2)
 
         tool = RobotSpacePoint(l2, -l1, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, -pi / 2)
         self.assertAlmostEqual(joints.theta2, pi / 2)
 
         tool = RobotSpacePoint(0, l1+l2, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, pi / 2)
         self.assertAlmostEqual(joints.theta2, 0.0)
 
@@ -83,17 +83,17 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2, flip_x=-1)
 
         joints = JointSpacePoint(0, pi/4, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, -(l1 + l2 * cos(joints.theta2)))
         self.assertAlmostEqual(tool.y, l2 * sin(joints.theta2))
 
         joints = JointSpacePoint(pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, l2)
         self.assertAlmostEqual(tool.y, l1)
 
         joints = JointSpacePoint(-pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, -l2)
         self.assertAlmostEqual(tool.y, -l1)
 
@@ -104,12 +104,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2, flip_x=-1)
 
         tool = RobotSpacePoint(-l2, -l1, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, -pi / 2)
         self.assertAlmostEqual(joints.theta2, pi / 2)
 
         tool = RobotSpacePoint(0, l1+l2, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, pi / 2)
         self.assertAlmostEqual(joints.theta2, 0.0)
 
@@ -120,12 +120,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2, origin=Vector2D(1,1))
 
         joints = JointSpacePoint(pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, 1 - l2)
         self.assertAlmostEqual(tool.y, 1 + l1)
 
         joints = JointSpacePoint(-pi/2, pi/2, 0, 0)
-        tool = scara.update_joints(joints)
+        tool = scara.forward_kinematics(joints)
         self.assertAlmostEqual(tool.x, 1 + l2)
         self.assertAlmostEqual(tool.y, 1 - l1)
 
@@ -137,12 +137,12 @@ class ScaraTestCase(unittest.TestCase):
         scara = Scara.Scara(l1=l1, l2=l2, origin=Vector2D(1,1))
 
         tool = RobotSpacePoint(1+l2, 1-l1, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, -pi / 2)
         self.assertAlmostEqual(joints.theta2, pi / 2)
 
         tool = RobotSpacePoint(1, 1+l1+l2, 0, 0)
-        joints = scara.update_tool(tool)
+        joints = scara.inverse_kinematics(tool)
         self.assertAlmostEqual(joints.theta1, pi / 2)
         self.assertAlmostEqual(joints.theta2, 0.0)
 
@@ -154,8 +154,8 @@ class ScaraTestCase(unittest.TestCase):
 
         tool = RobotSpacePoint(1+l1+l2, 0, 0, 0)
         with self.assertRaises(ValueError):
-            joints = scara.update_tool(tool)
+            joints = scara.inverse_kinematics(tool)
 
         tool = RobotSpacePoint(0, 0, 0, 0)
         with self.assertRaises(ValueError):
-            joints = scara.update_tool(tool)
+            joints = scara.inverse_kinematics(tool)

@@ -27,8 +27,8 @@ def main():
     origin_x, origin_y = 0.0, 0.0
 
     scara = Scara(l1=L1, l2=L2, flip_x=-1, flip_elbow=-1)
-    tool = scara.forward_kinematics()
-    joints = scara.inverse_kinematics()
+    tool = scara.get_tool()
+    joints = scara.get_joints()
 
     # Draw robot
     p0, p1, p2 = scara.get_detailed_pos()
@@ -56,7 +56,7 @@ def main():
 
             try:
                 tool = RobotSpacePoint(x, y, 0, 0)
-                joints = scara.update_tool(tool)
+                joints = scara.inverse_kinematics(tool)
             except ValueError:
                 pass
 
