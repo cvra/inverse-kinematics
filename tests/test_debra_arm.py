@@ -132,3 +132,38 @@ class DebraArmTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             joints = arm.inverse_kinematics(tool)
 
+    def test_jacobian(self):
+        """
+        Checks that jacobian matrix is correct
+        """
+        scara = DebraArm.DebraArm(l1=l1, l2=l2)
+
+        jacobian = scara.compute_jacobian()
+        self.assertAlmostEqual(jacobian[0,0], 0)
+        self.assertAlmostEqual(jacobian[0,1], 0)
+        self.assertAlmostEqual(jacobian[1,0], l1 + l2)
+        self.assertAlmostEqual(jacobian[1,1], l2)
+        self.assertAlmostEqual(jacobian[2,0], 0)
+        self.assertAlmostEqual(jacobian[2,1], 0)
+        self.assertAlmostEqual(jacobian[2,2], 1)
+        self.assertAlmostEqual(jacobian[2,3], 0)
+        self.assertAlmostEqual(jacobian[3,0], -1)
+        self.assertAlmostEqual(jacobian[3,1], -1)
+        self.assertAlmostEqual(jacobian[3,2], 0)
+        self.assertAlmostEqual(jacobian[3,3], -1)
+
+        joints = JointSpacePoint(0, pi/2, 0, 0)
+        tool = scara.forward_kinematics(joints)
+        jacobian = scara.compute_jacobian()
+        self.assertAlmostEqual(jacobian[0,0], - l2)
+        self.assertAlmostEqual(jacobian[0,1], - l2)
+        self.assertAlmostEqual(jacobian[1,0], l1)
+        self.assertAlmostEqual(jacobian[1,1], 0)
+        self.assertAlmostEqual(jacobian[2,0], 0)
+        self.assertAlmostEqual(jacobian[2,1], 0)
+        self.assertAlmostEqual(jacobian[2,2], 1)
+        self.assertAlmostEqual(jacobian[2,3], 0)
+        self.assertAlmostEqual(jacobian[3,0], -1)
+        self.assertAlmostEqual(jacobian[3,1], -1)
+        self.assertAlmostEqual(jacobian[3,2], 0)
+        self.assertAlmostEqual(jacobian[3,3], -1)

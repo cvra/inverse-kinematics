@@ -1,6 +1,7 @@
 from invkin.Datatypes import *
 from invkin.Scara import Scara
 from math import pi, cos, sin
+import numpy as np
 
 class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
@@ -110,3 +111,20 @@ class DebraArm(Scara):
                                     + self.joints.theta3)
 
         return self.origin, p1, p2, Vector2D(x3, y3), self.tool.z
+
+    def compute_jacobian(self):
+        """
+        Returns jacobian matrix at current state
+        """
+        dx_dth1 = - self.l1 * sin(self.joints.theta1) \
+                  - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+        dx_dth2 = - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+
+        dy_dth1 = self.l1 * cos(self.joints.theta1) \
+                  + self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+        dy_dth2 = self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+
+        return np.matrix([[dx_dth1, dx_dth2, 0,  0], \
+                          [dy_dth1, dy_dth2, 0,  0], \
+                          [      0,       0, 1,  0], \
+                          [     -1,      -1, 0, -1]])

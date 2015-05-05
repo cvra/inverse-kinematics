@@ -1,5 +1,6 @@
 from invkin.Datatypes import *
 from math import sqrt, cos, sin, acos, atan2, pi
+import numpy as np
 
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
@@ -117,3 +118,18 @@ class Scara(object):
         y1 = self.l1 * sin(self.joints.theta1) + self.origin.y
 
         return self.origin, Vector2D(x1, y1), Vector2D(self.tool.x, self.tool.y)
+
+    def compute_jacobian(self):
+        """
+        Returns jacobian matrix at current state
+        """
+        dx_dth1 = - self.l1 * sin(self.joints.theta1) \
+                  - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+        dx_dth2 = - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+
+        dy_dth1 = self.l1 * cos(self.joints.theta1) \
+                  + self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+        dy_dth2 = self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+
+        return np.matrix([[dx_dth1, dx_dth2], \
+                          [dy_dth1, dy_dth2]])
