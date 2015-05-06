@@ -1,6 +1,7 @@
 from invkin.Datatypes import *
 from invkin import Scara
 from math import pi, sqrt, cos, sin
+import numpy as np
 import unittest
 
 l1 = 1.0
@@ -179,3 +180,52 @@ class ScaraTestCase(unittest.TestCase):
         self.assertAlmostEqual(jacobian[0,1], - l2)
         self.assertAlmostEqual(jacobian[1,0], l1)
         self.assertAlmostEqual(jacobian[1,1], 0)
+
+    def test_tool_vel(self):
+        """
+        Checks that tool velocity is correctly estimated
+        """
+        scara = Scara.Scara(l1=l1, l2=l2)
+
+        joints_vel = np.matrix([[0], [0]])
+        tool_vel = scara.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], 0)
+        self.assertAlmostEqual(tool_vel[1], 0)
+
+        joints_vel = np.matrix([[1], [1]])
+        tool_vel = scara.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], 0)
+        self.assertAlmostEqual(tool_vel[1], (l1 + l2) * joints_vel[0] \
+                                            + l2 * joints_vel[1])
+
+        joints = JointSpacePoint(0, pi/2, 0, 0)
+        tool = scara.forward_kinematics(joints)
+        joints_vel = np.matrix([[1], [1]])
+        tool_vel = scara.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], - l2 * (joints_vel[0] + joints_vel[1]))
+        self.assertAlmostEqual(tool_vel[1], l1 * joints_vel[0])
+
+    def test_joints_vel(self):
+        """
+        Checks that joints velocity is correctly estimated
+        """
+        scara = Scara.Scara(l1=l1, l2=l2)
+
+        joints = JointSpacePoint(0, pi/2, 0, 0)
+        tool = scara.forward_kinematics(joints)
+        tool_vel = np.matrix([[0], [0]])
+        joints_vel = scara.get_joints_vel(tool_vel)
+        self.assertAlmostEqual(joints_vel[0], 0)
+        self.assertAlmostEqual(joints_vel[1], 0)
+
+        joints = JointSpacePoint(0, 0, 0, 0)
+        tool = scara.forward_kinematics(joints)
+        tool_vel = np.matrix([[0.1], [0.1]])
+        with self.assertRaises(ValueError):
+            joints_vel = scara.get_joints_vel(tool_vel)
+
+        joints = JointSpacePoint(0, pi, 0, 0)
+        tool = scara.forward_kinematics(joints)
+        tool_vel = np.matrix([[0.1], [0.1]])
+        with self.assertRaises(ValueError):
+            joints_vel = scara.get_joints_vel(tool_vel)

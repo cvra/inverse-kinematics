@@ -30,10 +30,7 @@ class DebraArm(Scara):
         else:
             self.flip_x = FLIP_LEFT_HAND
 
-        if flip_elbow >= 0:
-            self.flip_elbow = ELBOW_BACK
-        else:
-            self.flip_elbow = ELBOW_FRONT
+        self.flip_elbow = ELBOW_BACK
 
         self.tool = self.get_tool()
 
@@ -128,3 +125,22 @@ class DebraArm(Scara):
                           [dy_dth1, dy_dth2, 0,  0], \
                           [      0,       0, 1,  0], \
                           [     -1,      -1, 0, -1]])
+
+    def get_tool_vel(self, joints_vel):
+        """
+        Computes current tool velocity using jacobian
+        """
+        jacobian = self.compute_jacobian()
+
+        return jacobian * joints_vel
+
+    def get_joints_vel(self, tool_vel):
+        """
+        Computes current tool velocity using jacobian
+        """
+        jacobian = self.compute_jacobian()
+
+        if abs(np.linalg.det(jacobian)) < EPSILON:
+            raise ValueError('Singularity')
+
+        return np.linalg.solve(jacobian, tool_vel)

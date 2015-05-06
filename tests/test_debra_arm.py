@@ -1,6 +1,7 @@
 from invkin.Datatypes import *
 from invkin import DebraArm
 from math import pi, sqrt, cos, sin
+import numpy as np
 import unittest
 
 l1 = 1.0
@@ -136,9 +137,9 @@ class DebraArmTestCase(unittest.TestCase):
         """
         Checks that jacobian matrix is correct
         """
-        scara = DebraArm.DebraArm(l1=l1, l2=l2)
+        arm = DebraArm.DebraArm(l1=l1, l2=l2)
 
-        jacobian = scara.compute_jacobian()
+        jacobian = arm.compute_jacobian()
         self.assertAlmostEqual(jacobian[0,0], 0)
         self.assertAlmostEqual(jacobian[0,1], 0)
         self.assertAlmostEqual(jacobian[1,0], l1 + l2)
@@ -153,8 +154,8 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(jacobian[3,3], -1)
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
-        tool = scara.forward_kinematics(joints)
-        jacobian = scara.compute_jacobian()
+        tool = arm.forward_kinematics(joints)
+        jacobian = arm.compute_jacobian()
         self.assertAlmostEqual(jacobian[0,0], - l2)
         self.assertAlmostEqual(jacobian[0,1], - l2)
         self.assertAlmostEqual(jacobian[1,0], l1)
@@ -167,3 +168,64 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(jacobian[3,1], -1)
         self.assertAlmostEqual(jacobian[3,2], 0)
         self.assertAlmostEqual(jacobian[3,3], -1)
+
+    def test_tool_vel(self):
+        """
+        Checks that tool velocity is correctly estimated
+        """
+        arm = DebraArm.DebraArm(l1=l1, l2=l2)
+
+        joints_vel = np.matrix([[0], [0], [0], [0]])
+        tool_vel = arm.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], 0)
+        self.assertAlmostEqual(tool_vel[1], 0)
+        self.assertAlmostEqual(tool_vel[2], 0)
+        self.assertAlmostEqual(tool_vel[3], 0)
+
+        joints_vel = np.matrix([[1], [1], [1], [1]])
+        tool_vel = arm.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], 0)
+        self.assertAlmostEqual(tool_vel[1], (l1 + l2) * joints_vel[0] \
+                                            + l2 * joints_vel[1])
+        self.assertAlmostEqual(tool_vel[2], 1)
+        self.assertAlmostEqual(tool_vel[3], - (joints_vel[0] \
+                                               + joints_vel[1] \
+                                               + joints_vel[2]))
+
+        joints = JointSpacePoint(0, pi/2, 0, 0)
+        tool = arm.forward_kinematics(joints)
+        joints_vel = np.matrix([[1], [1], [1], [1]])
+        tool_vel = arm.get_tool_vel(joints_vel)
+        self.assertAlmostEqual(tool_vel[0], - l2 * (joints_vel[0] + joints_vel[1]))
+        self.assertAlmostEqual(tool_vel[1], l1 * joints_vel[0])
+        self.assertAlmostEqual(tool_vel[2], 1)
+        self.assertAlmostEqual(tool_vel[3], - (joints_vel[0] \
+                                               + joints_vel[1] \
+                                               + joints_vel[2]))
+
+    def test_joints_vel(self):
+        """
+        Checks that joints velocity is correctly estimated
+        """
+        arm = DebraArm.DebraArm(l1=l1, l2=l2)
+
+        joints = JointSpacePoint(0, pi/2, 0, 0)
+        tool = arm.forward_kinematics(joints)
+        tool_vel = np.matrix([[0], [0], [0], [0]])
+        joints_vel = arm.get_joints_vel(tool_vel)
+        self.assertAlmostEqual(joints_vel[0], 0)
+        self.assertAlmostEqual(joints_vel[1], 0)
+        self.assertAlmostEqual(joints_vel[2], 0)
+        self.assertAlmostEqual(joints_vel[3], 0)
+
+        joints = JointSpacePoint(0, 0, 0, 0)
+        tool = arm.forward_kinematics(joints)
+        tool_vel = np.matrix([[1], [1], [1], [1]])
+        with self.assertRaises(ValueError):
+            joints_vel = arm.get_joints_vel(tool_vel)
+
+        joints = JointSpacePoint(0, pi, 0, 0)
+        tool = arm.forward_kinematics(joints)
+        tool_vel = np.matrix([[1], [1], [1], [1]])
+        with self.assertRaises(ValueError):
+            joints_vel = arm.get_joints_vel(tool_vel)
