@@ -150,3 +150,24 @@ class Scara(object):
             raise ValueError('Singularity')
 
         return np.linalg.solve(jacobian, tool_vel)
+
+    def trajectory_is_feasible(self, joint, pos_i, vel_i, pos_f, vel_f):
+        """
+        Implements formulas 9 and checks boundaries to check feasibility
+        Input:
+        joint - joint constraints
+        pos_i - initial position
+        vel_i - initial velocity
+        pos_f - final position
+        vel_f - final velocity
+        """
+        if pos_f > joint.pos_max or pos_f < joint.pos_min:
+            raise ValueError('Target position unreachable')
+        if vel_f > joint.vel_max or vel_f < joint.vel_min:
+            raise ValueError('Target velocity unreachable')
+
+        delta_p_dec = 0.5 * vel_f * abs(vel_f) / joint.acc_max
+
+        if (pos_f + delta_p_dec) > joint.pos_max
+           or (pos_f + delta_p_dec) < joint.pos_min:
+           raise ValueError('Target position unreachable at specified velocity')
