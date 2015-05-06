@@ -13,3 +13,9 @@ JointSpacePoint = namedtuple('JointSpacePoint', ['theta1', 'theta2', 'z', 'theta
 
 Vector2D = namedtuple('Vector2D', ['x', 'y'])
 Vector3D = namedtuple('Vector3D', ['x', 'y', 'z'])
+
+MinMaxConstraint = namedtuple('MinMaxConstraint', ['min', 'max'])
+JointMinMaxConstraint = namedtuple('JointMinMaxConstraint', ['pos_min', 'pos_max',
+                                                             'vel_min', 'vel_max',
+                                                             'acc_min', 'acc_max',
+                                                            ])

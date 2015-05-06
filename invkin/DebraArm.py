@@ -1,4 +1,5 @@
 from invkin.Datatypes import *
+from invkin.Constraints import Constraints
 from invkin.Scara import Scara
 from math import pi, cos, sin
 import numpy as np
@@ -6,11 +7,10 @@ import numpy as np
 class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
-    def __init__(self, l1=1.0, l2=1.0,
-                 q0=JointSpacePoint(0,0,0,0), \
+    def __init__(self, l1=1.0, l2=1.0, constraints=Constraints(),
+                 q0=JointSpacePoint(0,0,0,0),
                  origin=Vector3D(0,0,0),
-                 flip_x=FLIP_RIGHT_HAND,
-                 flip_elbow=ELBOW_BACK,):
+                 flip_x=FLIP_RIGHT_HAND):
         """
         Input:
         l1 - length of first link
@@ -22,6 +22,7 @@ class DebraArm(Scara):
         self.l1 = l1
         self.l2 = l2
         self.lsq = l1 ** 2 + l2 ** 2
+        self.constraints = constraints
         self.joints = q0
         self.origin = origin
 

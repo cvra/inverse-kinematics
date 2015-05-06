@@ -1,15 +1,15 @@
 from invkin.Datatypes import *
+from invkin.Constraints import Constraints
 from math import sqrt, cos, sin, acos, atan2, pi
 import numpy as np
 
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0,
-                 q0=JointSpacePoint(0,0,0,0), \
+    def __init__(self, l1=1.0, l2=1.0, constraints=Constraints(),
+                 q0=JointSpacePoint(0,0,0,0),
                  origin=Vector2D(0,0),
-                 flip_x=FLIP_RIGHT_HAND,
-                 flip_elbow=ELBOW_BACK):
+                 flip_x=FLIP_RIGHT_HAND):
         """
         Input:
         l1 - length of first link
@@ -21,6 +21,7 @@ class Scara(object):
         self.l1 = l1
         self.l2 = l2
         self.lsq = l1 ** 2 + l2 ** 2
+        self.constraints = constraints
         self.joints = q0
         self.origin = origin
 
