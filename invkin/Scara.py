@@ -151,6 +151,35 @@ class Scara(object):
 
         return np.linalg.solve(jacobian, tool_vel)
 
+    def joint_time_to_destination(self, joint, pos_i, vel_i, pos_f, vel_f):
+        """
+        Implements formula 27 in paper
+        Input:
+        joint - joint constraints
+        pos_i - initial position
+        vel_i - initial velocity
+        pos_f - final position
+        vel_f - final velocity
+        """
+        if not self.trajectory_is_feasible(joint, pos_i, vel_i, pos_f, vel_f):
+            raise
+
+        delta_p = pos_f - pos_i
+        delta_v = vel_f - vel_i
+        delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2)
+                       / joint.acc_max
+
+        sign_traj = np.sign(delta_p - delta_p_crit)
+
+        t_1 = (sign_traj * joint.vel_max - vel_i) / (sign_traj * joint.acc_max)
+        t_2 = (1 / joint.vel_max)
+              * ((vel_f**2 + vel_i**2 - 2 * sign_traj * vel_i) / (2 * joint.acc_max)
+                + sign_traj * delta_p)
+        t_f = t_2
+              + (vel_f - sign_traj * joint.vel_max) / (sign_traj * joint.acc_max)
+
+        return t_1, t_2, t_f
+
     def trajectory_is_feasible(self, joint, pos_i, vel_i, pos_f, vel_f):
         """
         Implements formulas 9 and checks boundaries to check feasibility
