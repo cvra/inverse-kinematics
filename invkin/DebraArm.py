@@ -37,11 +37,7 @@ class DebraArm(Scara):
 
     def forward_kinematics(self, new_joints):
         """
-        Update the joint values
-        Input:
-        new_joints - new positions of joints
-        Output:
-        tool - tool position in cartesian coordinates wrt arm base
+        Update the joint values through computation of forward kinematics
         """
         self.joints = new_joints
         self.tool = self.get_tool()
@@ -50,11 +46,7 @@ class DebraArm(Scara):
 
     def inverse_kinematics(self, new_tool):
         """
-        Update the tool position
-        Input:
-        new_tool - tool position in cartesian coordinates wrt arm base
-        Output:
-        new_joints - position of joints
+        Update the tool position through computation of inverse kinematics
         """
         norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
         if(norm > (self.l1 + self.l2) ** 2 or norm < (self.l1 - self.l2) ** 2):

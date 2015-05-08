@@ -38,11 +38,7 @@ class Scara(object):
 
     def forward_kinematics(self, new_joints):
         """
-        Update the joint values
-        Input:
-        new_joints - new positions of joints
-        Output:
-        tool - tool position in cartesian coordinates wrt arm base
+        Update the joint values through computation of forward kinematics
         """
         self.joints = new_joints
         self.tool = self.get_tool()
@@ -51,11 +47,7 @@ class Scara(object):
 
     def inverse_kinematics(self, new_tool):
         """
-        Update the tool position
-        Input:
-        new_tool - tool position in cartesian coordinates wrt arm base
-        Output:
-        new_joints - position of joints
+        Update the tool position through computation of inverse kinematics
         """
         norm = (new_tool.x - self.origin.x) ** 2 + (new_tool.y - self.origin.y) ** 2
         if(norm > (self.l1 + self.l2) ** 2 or norm < (self.l1 - self.l2) ** 2):
@@ -170,6 +162,7 @@ class Scara(object):
                                                start_joints_vel.theta1,
                                                target_joints_pos.theta1,
                                                target_joints_vel.theta1)
+
         ttd_theta2 = joint_time_to_destination(self.constraints.th2_c,
                                                start_joints_pos.theta2,
                                                start_joints_vel.theta2,
@@ -179,54 +172,45 @@ class Scara(object):
         # Return the largest one
         return np.amax([ttd_theta1.tf, ttd_theta2.tf])
 
-    def joint_time_to_destination(self, joint, pos_i, vel_i, pos_f, vel_f):
+    def joint_time_to_destination(self, constraint, pos_i, vel_i, pos_f, vel_f):
         """
-        Implements formula 27 in paper
-        Input:
-        joint - joint constraints
-        pos_i - initial position
-        vel_i - initial velocity
-        pos_f - final position
-        vel_f - final velocity
+        Implements formula 27 in paper to compute minimal time to destination
         """
-        if not self.trajectory_is_feasible(joint, pos_i, vel_i, pos_f, vel_f):
+        if not self.trajectory_is_feasible(constraint, pos_i, vel_i, pos_f, vel_f):
             raise
 
         delta_p = pos_f - pos_i
         delta_v = vel_f - vel_i
         delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2)
-                       / joint.acc_max
+                       / constraint.acc_max
 
         sign_traj = np.sign(delta_p - delta_p_crit)
 
-        t_1 = (sign_traj * joint.vel_max - vel_i) / (sign_traj * joint.acc_max)
+        t_1 = (sign_traj * constraint.vel_max - vel_i)
+              / (sign_traj * constraint.acc_max)
+
         t_2 = (1 / joint.vel_max)
-              * ((vel_f**2 + vel_i**2 - 2 * sign_traj * vel_i) / (2 * joint.acc_max)
-                + sign_traj * delta_p)
-        t_f = t_2
-              + (vel_f - sign_traj * joint.vel_max) / (sign_traj * joint.acc_max)
+              * ((vel_f**2 + vel_i**2 - 2 * sign_traj * vel_i)
+                 / (2 * constraint.acc_max) + sign_traj * delta_p)
+
+        t_f = t_2 + (vel_f - sign_traj * constraint.vel_max)
+                    / (sign_traj * constraint.acc_max)
 
         time_to_dest = TimeToDestination(t_1, t_2, t_f)
 
         return time_to_dest
 
-    def trajectory_is_feasible(self, joint, pos_i, vel_i, pos_f, vel_f):
+    def trajectory_is_feasible(self, constraint, pos_i, vel_i, pos_f, vel_f):
         """
-        Implements formulas 9 and checks boundaries to check feasibility
-        Input:
-        joint - joint constraints
-        pos_i - initial position
-        vel_i - initial velocity
-        pos_f - final position
-        vel_f - final velocity
+        Implements formula 9 and checks boundaries to determine feasibility
         """
-        if pos_f > joint.pos_max or pos_f < joint.pos_min:
+        if pos_f > constraint.pos_max or pos_f < constraint.pos_min:
             raise ValueError('Target position unreachable')
-        if vel_f > joint.vel_max or vel_f < joint.vel_min:
+        if vel_f > constraint.vel_max or vel_f < constraint.vel_min:
             raise ValueError('Target velocity unreachable')
 
-        delta_p_dec = 0.5 * vel_f * abs(vel_f) / joint.acc_max
+        delta_p_dec = 0.5 * vel_f * abs(vel_f) / constraint.acc_max
 
-        if (pos_f + delta_p_dec) > joint.pos_max
-           or (pos_f + delta_p_dec) < joint.pos_min:
+        if (pos_f + delta_p_dec) > constraint.pos_max
+           or (pos_f + delta_p_dec) < constraint.pos_min:
            raise ValueError('Target position unreachable at specified velocity')
