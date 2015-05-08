@@ -3,6 +3,8 @@ from invkin.Constraints import Constraints
 from math import sqrt, cos, sin, acos, atan2, pi
 import numpy as np
 
+TimeToDestination = namedtuple('TimeToDestination', ['t1', 't2', 'tf'])
+
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
@@ -151,6 +153,32 @@ class Scara(object):
 
         return np.linalg.solve(jacobian, tool_vel)
 
+    def synchronisation_time(self, start_pos, start_vel, target_pos, target_vel):
+        """
+        Input:
+        start_pos - start position in tool space
+        start_vel - start velocity in tool space
+        target_pos - target position in tool space
+        target_vel - target velocity in tool space
+        Output:
+        largest time to destination
+        (to use slowest joint as synchronisation reference)
+        """
+        # Compute time to destination for all joints
+        ttd_theta1 = joint_time_to_destination(self.constraints.th1_c,
+                                               start_joints_pos.theta1,
+                                               start_joints_vel.theta1,
+                                               target_joints_pos.theta1,
+                                               target_joints_vel.theta1)
+        ttd_theta2 = joint_time_to_destination(self.constraints.th2_c,
+                                               start_joints_pos.theta2,
+                                               start_joints_vel.theta2,
+                                               target_joints_pos.theta2,
+                                               target_joints_vel.theta2)
+
+        # Return the largest one
+        return np.amax([ttd_theta1.tf, ttd_theta2.tf])
+
     def joint_time_to_destination(self, joint, pos_i, vel_i, pos_f, vel_f):
         """
         Implements formula 27 in paper
@@ -178,7 +206,9 @@ class Scara(object):
         t_f = t_2
               + (vel_f - sign_traj * joint.vel_max) / (sign_traj * joint.acc_max)
 
-        return t_1, t_2, t_f
+        time_to_dest = TimeToDestination(t_1, t_2, t_f)
+
+        return time_to_dest
 
     def trajectory_is_feasible(self, joint, pos_i, vel_i, pos_f, vel_f):
         """
