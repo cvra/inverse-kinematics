@@ -8,7 +8,9 @@ TimeToDestination = namedtuple('TimeToDestination', ['t1', 't2', 'tf'])
 class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
-    def __init__(self, l1=1.0, l2=1.0, constraints=Constraints(),
+    def __init__(self, l1=1.0, l2=1.0,
+                 theta1_constraints=JointMinMaxConstraint(-1,1, 0,1, 0,1),
+                 theta2_constraints=JointMinMaxConstraint(-1,1, 0,1, 0,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector2D(0,0),
                  flip_x=FLIP_RIGHT_HAND):
@@ -23,9 +25,12 @@ class Scara(object):
         self.l1 = l1
         self.l2 = l2
         self.lsq = l1 ** 2 + l2 ** 2
-        self.constraints = constraints
         self.joints = q0
         self.origin = origin
+
+        self.constraints = Constraints()
+        self.constraints.add_axis('theta1', theta1_constraints)
+        self.constraints.add_axis('theta2', theta2_constraints)
 
         if flip_x >= 0:
             self.flip_x = FLIP_RIGHT_HAND
@@ -145,72 +150,67 @@ class Scara(object):
 
         return np.linalg.solve(jacobian, tool_vel)
 
-    def synchronisation_time(self, start_pos, start_vel, target_pos, target_vel):
+    def get_path(self, start_pos, start_vel, target_pos, target_vel):
         """
+        Generates a time optimal trajectory for the whole arm
         Input:
         start_pos - start position in tool space
         start_vel - start velocity in tool space
         target_pos - target position in tool space
         target_vel - target velocity in tool space
-        Output:
-        largest time to destination
-        (to use slowest joint as synchronisation reference)
+        """
+
+    def synchronisation_time(self, start_pos, start_vel, target_pos, target_vel):
+        """
+        Return largest time to destination to use slowest joint as synchronisation
+        reference
         """
         # Compute time to destination for all joints
-        ttd_theta1 = joint_time_to_destination(self.constraints.th1_c,
-                                               start_joints_pos.theta1,
-                                               start_joints_vel.theta1,
-                                               target_joints_pos.theta1,
-                                               target_joints_vel.theta1)
+        ttd_theta1 = self.joint_time_to_destination('theta1',
+                                                    start_pos.theta1,
+                                                    start_vel.theta1,
+                                                    target_pos.theta1,
+                                                    target_vel.theta1)
 
-        ttd_theta2 = joint_time_to_destination(self.constraints.th2_c,
-                                               start_joints_pos.theta2,
-                                               start_joints_vel.theta2,
-                                               target_joints_pos.theta2,
-                                               target_joints_vel.theta2)
+        ttd_theta2 = self.joint_time_to_destination('theta2',
+                                                    start_pos.theta2,
+                                                    start_vel.theta2,
+                                                    target_pos.theta2,
+                                                    target_vel.theta2)
 
         # Return the largest one
         return np.amax([ttd_theta1.tf, ttd_theta2.tf])
 
-    def joint_time_to_destination(self, constraint, pos_i, vel_i, pos_f, vel_f):
+    def joint_time_to_destination(self, axis, pos_i, vel_i, pos_f, vel_f):
         """
         Implements formula 27 in paper to compute minimal time to destination
+        There is a mistake on the equation of tf on the paper: you need to
+        substract the fraction from t2 instead of adding it (see eq 23)
         """
-        if not self.trajectory_is_feasible(constraint, pos_i, vel_i, pos_f, vel_f):
+        if not self.constraints.trajectory_is_feasible(axis,
+                                                       pos_i, vel_i,
+                                                       pos_f, vel_f):
             raise
+
+        constraint = self.constraints.get_axis_constraints(axis)
 
         delta_p = pos_f - pos_i
         delta_v = vel_f - vel_i
-        delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2)
+        delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2) \
                        / constraint.acc_max
 
         sign_traj = np.sign(delta_p - delta_p_crit)
 
-        t_1 = (sign_traj * constraint.vel_max - vel_i)
+        t_1 = (sign_traj * constraint.vel_max - vel_i) \
               / (sign_traj * constraint.acc_max)
 
-        t_2 = (1 / joint.vel_max)
-              * ((vel_f**2 + vel_i**2 - 2 * sign_traj * vel_i)
-                 / (2 * constraint.acc_max) + sign_traj * delta_p)
+        t_2 = (1 / constraint.vel_max) \
+              * ((vel_f**2 + vel_i**2 - 2 * sign_traj * vel_i) \
+                 / (2 * constraint.acc_max) + (sign_traj * delta_p))
 
-        t_f = t_2 + (vel_f - sign_traj * constraint.vel_max)
+        t_f = t_2 - (vel_f - sign_traj * constraint.vel_max) \
                     / (sign_traj * constraint.acc_max)
 
-        time_to_dest = TimeToDestination(t_1, t_2, t_f)
+        time_to_dest = TimeToDestination(t1=t_1, t2=t_2, tf=t_f)
 
         return time_to_dest
-
-    def trajectory_is_feasible(self, constraint, pos_i, vel_i, pos_f, vel_f):
-        """
-        Implements formula 9 and checks boundaries to determine feasibility
-        """
-        if pos_f > constraint.pos_max or pos_f < constraint.pos_min:
-            raise ValueError('Target position unreachable')
-        if vel_f > constraint.vel_max or vel_f < constraint.vel_min:
-            raise ValueError('Target velocity unreachable')
-
-        delta_p_dec = 0.5 * vel_f * abs(vel_f) / constraint.acc_max
-
-        if (pos_f + delta_p_dec) > constraint.pos_max
-           or (pos_f + delta_p_dec) < constraint.pos_min:
-           raise ValueError('Target position unreachable at specified velocity')
