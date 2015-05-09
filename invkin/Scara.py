@@ -195,11 +195,7 @@ class Scara(object):
         constraint = self.constraints.get_axis_constraints(axis)
 
         delta_p = pos_f - pos_i
-        delta_v = vel_f - vel_i
-        delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2) \
-                       / constraint.acc_max
-
-        sign_traj = np.sign(delta_p - delta_p_crit)
+        sign_traj = self.trajectory_sign(constraint, pos_i, vel_i, pos_f, vel_f)
 
         t_1 = (sign_traj * constraint.vel_max - vel_i) \
               / (sign_traj * constraint.acc_max)
@@ -214,3 +210,15 @@ class Scara(object):
         time_to_dest = TimeToDestination(t1=t_1, t2=t_2, tf=t_f)
 
         return time_to_dest
+
+    def trajectory_sign(self, constraint, pos_i, vel_i, pos_f, vel_f):
+        """
+        Get sign of trajectory to be executed
+        """
+        delta_p = pos_f - pos_i
+        delta_v = vel_f - vel_i
+
+        delta_p_crit = 0.5 * np.sign(delta_v) * (vel_f ** 2 - vel_i ** 2) \
+                       / constraint.acc_max
+
+        return np.sign(delta_p - delta_p_crit)

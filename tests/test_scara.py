@@ -295,3 +295,26 @@ class ScaraTestCase(unittest.TestCase):
                                         target_pos, target_vel)
         self.assertAlmostEqual(tf, 1.375)
 
+    def test_traj_sign(self):
+        """
+        Check that trajectory sign is well determined
+        """
+        scara = Scara.Scara(l1=l1, l2=l2)
+
+        # Positive
+        sign = scara.trajectory_sign(
+                    scara.constraints.get_axis_constraints('theta1'),
+                    0, 0, 0.5, 0.5)
+        self.assertAlmostEqual(sign, 1)
+
+        # Negative
+        sign = scara.trajectory_sign(
+                    scara.constraints.get_axis_constraints('theta1'),
+                    0, 0, -0.5, 0.5)
+        self.assertAlmostEqual(sign, -1)
+
+        # Non feasible
+        sign = scara.trajectory_sign(
+                    scara.constraints.get_axis_constraints('theta1'),
+                    0, 0, 0.5, 1)
+        self.assertAlmostEqual(sign, 0)
