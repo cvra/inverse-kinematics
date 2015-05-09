@@ -1,11 +1,17 @@
 from collections import namedtuple
 from math import pi
 
+TRUE = 1
+FALSE = 0
+
 FLIP_RIGHT_HAND = 1
 FLIP_LEFT_HAND = -1
+
 ELBOW_BACK = 1
 ELBOW_FRONT = -1
+
 EPSILON = 1e-2
+
 GRIPPER_ANGULAR_SPACING = 2 * pi / 3
 
 RobotSpacePoint = namedtuple('RobotSpacePoint', ['x', 'y', 'z', 'gripper_hdg'])
