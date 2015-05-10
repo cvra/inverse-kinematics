@@ -230,45 +230,6 @@ class ScaraTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             joints_vel = scara.get_joints_vel(tool_vel)
 
-    def test_time_to_destination(self):
-        """
-        Check that time to destination is well computed
-        """
-        scara = Scara.Scara(l1=l1, l2=l2)
-
-        # Position too far
-        with self.assertRaises(ValueError):
-            ttd = scara.joint_time_to_destination('theta1', 0, 0, 2, 0)
-
-        # Velocity too high
-        with self.assertRaises(ValueError):
-            ttd = scara.joint_time_to_destination('theta1', 0, 0, 0.5, 2)
-
-        ttd = scara.joint_time_to_destination('theta1', 0, 0, 0.5, 0)
-        self.assertAlmostEqual(ttd.t1, 1.0)
-        self.assertAlmostEqual(ttd.t2, 0.5)
-        self.assertAlmostEqual(ttd.tf, 1.5)
-
-        ttd = scara.joint_time_to_destination('theta1', 0, 0, -0.75, 0)
-        self.assertAlmostEqual(ttd.t1, 1.0)
-        self.assertAlmostEqual(ttd.t2, 0.75)
-        self.assertAlmostEqual(ttd.tf, 1.75)
-
-        ttd = scara.joint_time_to_destination('theta1', 0, 0, 0.5, 0.5)
-        self.assertAlmostEqual(ttd.t1, 1.0)
-        self.assertAlmostEqual(ttd.t2, 0.625)
-        self.assertAlmostEqual(ttd.tf, 1.125)
-
-        ttd = scara.joint_time_to_destination('theta1', 0, 0, 0.75, 0.5)
-        self.assertAlmostEqual(ttd.t1, 1.0)
-        self.assertAlmostEqual(ttd.t2, 0.875)
-        self.assertAlmostEqual(ttd.tf, 1.375)
-
-        ttd = scara.joint_time_to_destination('theta1', 0, 0, -0.75, 0.5)
-        self.assertAlmostEqual(ttd.t1, 1.0)
-        self.assertAlmostEqual(ttd.t2, 0.875)
-        self.assertAlmostEqual(ttd.tf, 2.375)
-
     def test_sync_time(self):
         """
         Check that time to destination is well computed
@@ -294,30 +255,6 @@ class ScaraTestCase(unittest.TestCase):
         tf = scara.synchronisation_time(start_pos, start_vel,
                                         target_pos, target_vel)
         self.assertAlmostEqual(tf, 1.375)
-
-    def test_traj_sign(self):
-        """
-        Check that trajectory sign is well determined
-        """
-        scara = Scara.Scara(l1=l1, l2=l2)
-
-        # Positive
-        sign = scara.trajectory_sign(
-                    scara.constraints.get_axis_constraints('theta1'),
-                    0, 0, 0.5, 0.5)
-        self.assertAlmostEqual(sign, 1)
-
-        # Negative
-        sign = scara.trajectory_sign(
-                    scara.constraints.get_axis_constraints('theta1'),
-                    0, 0, -0.5, 0.5)
-        self.assertAlmostEqual(sign, -1)
-
-        # Non feasible
-        sign = scara.trajectory_sign(
-                    scara.constraints.get_axis_constraints('theta1'),
-                    0, 0, 0.5, 1)
-        self.assertAlmostEqual(sign, 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,5 @@
 from invkin.Datatypes import *
-from invkin.Constraints import Constraints
+from invkin.Joint import Joint
 from invkin.Scara import Scara
 from math import pi, cos, sin
 import numpy as np
@@ -7,7 +7,11 @@ import numpy as np
 class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
-    def __init__(self, l1=1.0, l2=1.0, constraints=Constraints(),
+    def __init__(self, l1=1.0, l2=1.0,
+                 theta1_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
+                 theta2_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
+                 theta3_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
+                 z_constraints=JointMinMaxConstraint(0,1, -1,1, -1,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector3D(0,0,0),
                  flip_x=FLIP_RIGHT_HAND):
@@ -22,9 +26,13 @@ class DebraArm(Scara):
         self.l1 = l1
         self.l2 = l2
         self.lsq = l1 ** 2 + l2 ** 2
-        self.constraints = constraints
         self.joints = q0
         self.origin = origin
+
+        self.theta1_axis = Joint(theta1_constraints)
+        self.theta2_axis = Joint(theta2_constraints)
+        self.theta3_axis = Joint(theta3_constraints)
+        self.z_axis = Joint(z_constraints)
 
         if flip_x > 0:
             self.flip_x = FLIP_RIGHT_HAND
