@@ -25,3 +25,5 @@ JointMinMaxConstraint = namedtuple('JointMinMaxConstraint', ['pos_min', 'pos_max
                                                              'vel_min', 'vel_max',
                                                              'acc_min', 'acc_max',
                                                             ])
+
+TimeToDestination = namedtuple('TimeToDestination', ['t1', 't2', 'tf'])

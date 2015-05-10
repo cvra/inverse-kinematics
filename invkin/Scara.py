@@ -135,20 +135,26 @@ class Scara(object):
         """
         Computes current tool velocity using jacobian
         """
+        joints_vel = np.matrix([[joints_vel.theta1],
+                                [joints_vel.theta2]])
         jacobian = self.compute_jacobian()
+        tool_vel = jacobian * joints_vel
 
-        return jacobian * joints_vel
+        return RobotSpacePoint(tool_vel[0], tool_vel[1], 0, 0)
 
     def get_joints_vel(self, tool_vel):
         """
         Computes current tool velocity using jacobian
         """
+        tool_vel = np.matrix([[tool_vel.x], [tool_vel.y]])
         jacobian = self.compute_jacobian()
 
         if abs(np.linalg.det(jacobian)) < EPSILON:
             raise ValueError('Singularity')
 
-        return np.linalg.solve(jacobian, tool_vel)
+        joints_vel = np.linalg.solve(jacobian, tool_vel)
+
+        return JointSpacePoint(joints_vel[0], joints_vel[1], 0, 0)
 
     def get_path(self, start_pos, start_vel, target_pos, target_vel):
         """
@@ -195,6 +201,10 @@ class Scara(object):
         constraint = self.constraints.get_axis_constraints(axis)
 
         delta_p = pos_f - pos_i
+
+        if delta_p == 0:
+            return TimeToDestination(0,0,0)
+
         sign_traj = self.trajectory_sign(constraint, pos_i, vel_i, pos_f, vel_f)
 
         t_1 = (sign_traj * constraint.vel_max - vel_i) \
@@ -207,7 +217,7 @@ class Scara(object):
         t_f = t_2 - (vel_f - sign_traj * constraint.vel_max) \
                     / (sign_traj * constraint.acc_max)
 
-        time_to_dest = TimeToDestination(t1=t_1, t2=t_2, tf=t_f)
+        time_to_dest = TimeToDestination(t_1, t_2, t_f)
 
         return time_to_dest
 

@@ -175,33 +175,33 @@ class DebraArmTestCase(unittest.TestCase):
         """
         arm = DebraArm.DebraArm(l1=l1, l2=l2)
 
-        joints_vel = np.matrix([[0], [0], [0], [0]])
+        joints_vel = JointSpacePoint(0, 0, 0, 0)
         tool_vel = arm.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], 0)
-        self.assertAlmostEqual(tool_vel[1], 0)
-        self.assertAlmostEqual(tool_vel[2], 0)
-        self.assertAlmostEqual(tool_vel[3], 0)
+        self.assertAlmostEqual(tool_vel.x, 0)
+        self.assertAlmostEqual(tool_vel.y, 0)
+        self.assertAlmostEqual(tool_vel.z, 0)
+        self.assertAlmostEqual(tool_vel.gripper_hdg, 0)
 
-        joints_vel = np.matrix([[1], [1], [1], [1]])
+        joints_vel = JointSpacePoint(1, 1, 1, 1)
         tool_vel = arm.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], 0)
-        self.assertAlmostEqual(tool_vel[1], (l1 + l2) * joints_vel[0] \
-                                            + l2 * joints_vel[1])
-        self.assertAlmostEqual(tool_vel[2], 1)
-        self.assertAlmostEqual(tool_vel[3], - (joints_vel[0] \
-                                               + joints_vel[1] \
-                                               + joints_vel[2]))
+        self.assertAlmostEqual(tool_vel.x, 0)
+        self.assertAlmostEqual(tool_vel.y, (l1 + l2) * joints_vel.theta1 \
+                                            + l2 * joints_vel.theta2)
+        self.assertAlmostEqual(tool_vel.z, 1)
+        self.assertAlmostEqual(tool_vel.gripper_hdg, - (joints_vel.theta1 \
+                                                       + joints_vel.theta2 \
+                                                       + joints_vel.theta3))
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
         tool = arm.forward_kinematics(joints)
-        joints_vel = np.matrix([[1], [1], [1], [1]])
+        joints_vel = JointSpacePoint(1, 1, 1, 1)
         tool_vel = arm.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], - l2 * (joints_vel[0] + joints_vel[1]))
-        self.assertAlmostEqual(tool_vel[1], l1 * joints_vel[0])
-        self.assertAlmostEqual(tool_vel[2], 1)
-        self.assertAlmostEqual(tool_vel[3], - (joints_vel[0] \
-                                               + joints_vel[1] \
-                                               + joints_vel[2]))
+        self.assertAlmostEqual(tool_vel.x, - l2 * (joints_vel.theta1 + joints_vel.theta2))
+        self.assertAlmostEqual(tool_vel.y, l1 * joints_vel.theta1)
+        self.assertAlmostEqual(tool_vel.z, 1)
+        self.assertAlmostEqual(tool_vel.gripper_hdg, - (joints_vel.theta1 \
+                                                       + joints_vel.theta2 \
+                                                       + joints_vel.theta3))
 
     def test_joints_vel(self):
         """
@@ -211,21 +211,24 @@ class DebraArmTestCase(unittest.TestCase):
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
         tool = arm.forward_kinematics(joints)
-        tool_vel = np.matrix([[0], [0], [0], [0]])
+        tool_vel = RobotSpacePoint(0, 0, 0, 0)
         joints_vel = arm.get_joints_vel(tool_vel)
-        self.assertAlmostEqual(joints_vel[0], 0)
-        self.assertAlmostEqual(joints_vel[1], 0)
-        self.assertAlmostEqual(joints_vel[2], 0)
-        self.assertAlmostEqual(joints_vel[3], 0)
+        self.assertAlmostEqual(joints_vel.theta1, 0)
+        self.assertAlmostEqual(joints_vel.theta2, 0)
+        self.assertAlmostEqual(joints_vel.theta3, 0)
+        self.assertAlmostEqual(joints_vel.z, 0)
 
         joints = JointSpacePoint(0, 0, 0, 0)
         tool = arm.forward_kinematics(joints)
-        tool_vel = np.matrix([[1], [1], [1], [1]])
+        tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
             joints_vel = arm.get_joints_vel(tool_vel)
 
         joints = JointSpacePoint(0, pi, 0, 0)
         tool = arm.forward_kinematics(joints)
-        tool_vel = np.matrix([[1], [1], [1], [1]])
+        tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
             joints_vel = arm.get_joints_vel(tool_vel)
+
+if __name__ == '__main__':
+    unittest.main()

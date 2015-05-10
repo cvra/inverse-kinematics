@@ -46,3 +46,6 @@ class ConstraintsTestCase(unittest.TestCase):
         # Doable
         feasible = constraints.trajectory_is_feasible('theta1', 0, 0, 0.5, 0.5)
         self.assertAlmostEqual(feasible, TRUE)
+
+if __name__ == '__main__':
+    unittest.main()

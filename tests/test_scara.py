@@ -187,23 +187,23 @@ class ScaraTestCase(unittest.TestCase):
         """
         scara = Scara.Scara(l1=l1, l2=l2)
 
-        joints_vel = np.matrix([[0], [0]])
+        joints_vel = JointSpacePoint(0, 0, 0, 0)
         tool_vel = scara.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], 0)
-        self.assertAlmostEqual(tool_vel[1], 0)
+        self.assertAlmostEqual(tool_vel.x, 0)
+        self.assertAlmostEqual(tool_vel.y, 0)
 
-        joints_vel = np.matrix([[1], [1]])
+        joints_vel = JointSpacePoint(1, 1, 1, 1)
         tool_vel = scara.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], 0)
-        self.assertAlmostEqual(tool_vel[1], (l1 + l2) * joints_vel[0] \
-                                            + l2 * joints_vel[1])
+        self.assertAlmostEqual(tool_vel.x, 0)
+        self.assertAlmostEqual(tool_vel.y, (l1 + l2) * joints_vel.theta1 \
+                                            + l2 * joints_vel.theta2)
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
         tool = scara.forward_kinematics(joints)
-        joints_vel = np.matrix([[1], [1]])
+        joints_vel = JointSpacePoint(1, 1, 1, 1)
         tool_vel = scara.get_tool_vel(joints_vel)
-        self.assertAlmostEqual(tool_vel[0], - l2 * (joints_vel[0] + joints_vel[1]))
-        self.assertAlmostEqual(tool_vel[1], l1 * joints_vel[0])
+        self.assertAlmostEqual(tool_vel.x, - l2 * (joints_vel.theta1 + joints_vel.theta2))
+        self.assertAlmostEqual(tool_vel.y, l1 * joints_vel.theta1)
 
     def test_joints_vel(self):
         """
@@ -213,20 +213,20 @@ class ScaraTestCase(unittest.TestCase):
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
         tool = scara.forward_kinematics(joints)
-        tool_vel = np.matrix([[0], [0]])
+        tool_vel = RobotSpacePoint(0, 0, 0, 0)
         joints_vel = scara.get_joints_vel(tool_vel)
-        self.assertAlmostEqual(joints_vel[0], 0)
-        self.assertAlmostEqual(joints_vel[1], 0)
+        self.assertAlmostEqual(joints_vel.theta1, 0)
+        self.assertAlmostEqual(joints_vel.theta2, 0)
 
         joints = JointSpacePoint(0, 0, 0, 0)
         tool = scara.forward_kinematics(joints)
-        tool_vel = np.matrix([[0.1], [0.1]])
+        tool_vel = RobotSpacePoint(0.1, 0.1, 0.1, 0.1)
         with self.assertRaises(ValueError):
             joints_vel = scara.get_joints_vel(tool_vel)
 
         joints = JointSpacePoint(0, pi, 0, 0)
         tool = scara.forward_kinematics(joints)
-        tool_vel = np.matrix([[0.1], [0.1]])
+        tool_vel = RobotSpacePoint(0.1, 0.1, 0.1, 0.1)
         with self.assertRaises(ValueError):
             joints_vel = scara.get_joints_vel(tool_vel)
 
@@ -318,3 +318,6 @@ class ScaraTestCase(unittest.TestCase):
                     scara.constraints.get_axis_constraints('theta1'),
                     0, 0, 0.5, 1)
         self.assertAlmostEqual(sign, 0)
+
+if __name__ == '__main__':
+    unittest.main()
