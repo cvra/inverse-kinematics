@@ -9,7 +9,7 @@ class Constraints(collections.MutableMapping):
         self.store = dict()
         self.update(dict(*args, **kwargs))
 
-    def add_axis(self, name, constraints=JointMinMaxConstraint(-1,1, 0,1, 0,1)):
+    def add_axis(self, name, constraints=JointMinMaxConstraint(-1,1, -1,1, -1,1)):
         self.store[self.__keytransform__(name)] = constraints
 
     def get_axis_constraints(self, axis):
