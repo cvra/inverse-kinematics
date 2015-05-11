@@ -26,8 +26,8 @@ class Scara(object):
         self.joints = q0
         self.origin = origin
 
-        self.theta1_axis = Joint(theta1_constraints)
-        self.theta2_axis = Joint(theta2_constraints)
+        self.theta1_joint = Joint(theta1_constraints)
+        self.theta2_joint = Joint(theta2_constraints)
 
         if flip_x >= 0:
             self.flip_x = FLIP_RIGHT_HAND
@@ -182,14 +182,14 @@ class Scara(object):
                                             target_joints_vel)
 
         # Get trajectories for each joint
-        traj_theta1 = self.theta1_axis.get_path(start_joints_pos.theta1,
+        traj_theta1 = self.theta1_joint.get_path(start_joints_pos.theta1,
                                                 start_joints_vel.theta1,
                                                 target_joints_pos.theta1,
                                                 target_joints_vel.theta1,
                                                 tf_sync,
                                                 delta_t)
 
-        traj_theta2 = self.theta2_axis.get_path(start_joints_pos.theta2,
+        traj_theta2 = self.theta2_joint.get_path(start_joints_pos.theta2,
                                                 start_joints_vel.theta2,
                                                 target_joints_pos.theta2,
                                                 target_joints_vel.theta2,
@@ -204,12 +204,12 @@ class Scara(object):
         reference
         """
         # Compute time to destination for all joints
-        ttd_theta1 = self.theta1_axis.time_to_destination(start_pos.theta1,
+        ttd_theta1 = self.theta1_joint.time_to_destination(start_pos.theta1,
                                                           start_vel.theta1,
                                                           target_pos.theta1,
                                                           target_vel.theta1)
 
-        ttd_theta2 = self.theta2_axis.time_to_destination(start_pos.theta2,
+        ttd_theta2 = self.theta2_joint.time_to_destination(start_pos.theta2,
                                                           start_vel.theta2,
                                                           target_pos.theta2,
                                                           target_vel.theta2)

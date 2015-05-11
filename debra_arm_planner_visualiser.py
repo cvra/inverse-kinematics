@@ -41,6 +41,7 @@ def main():
     origin_x, origin_y = 0.0, 0.0
 
     arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=1)
+    arm.inverse_kinematics(RobotSpacePoint(0.99*(L1+L2), 0, 0, 0))
     tool = arm.get_tool()
     joints = arm.get_joints()
 
@@ -64,11 +65,19 @@ def main():
                 tool_prev = tool
                 tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
 
-                pth1, pth2, pz, pth3 = arm.get_path(tool_prev,
-                                                    RobotSpacePoint(0,0,0,0),
-                                                    tool,
-                                                    RobotSpacePoint(0,0,0,0),
-                                                    DELTA_T)
+                if MODE == PLAN_JOINT_SPACE:
+                    pth1, pth2, pz, pth3 = arm.get_path(tool_prev,
+                                                        RobotSpacePoint(0,0,0,0),
+                                                        tool,
+                                                        RobotSpacePoint(0,0,0,0),
+                                                        DELTA_T)
+                else:
+                    pth1, pth2, pz, pth3 = arm.get_path_xyz(
+                                                        tool_prev,
+                                                        RobotSpacePoint(0,0,0,0),
+                                                        tool,
+                                                        RobotSpacePoint(0,0,0,0),
+                                                        DELTA_T)
 
                 draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)
 
@@ -82,6 +91,7 @@ def main():
 
 def draw_trajectory(arm, path_th1, path_th2, path_z, path_th3, dt):
     "draw trajectory"
+
     for th1, th2, z, th3 in zip(path_th1, path_th2, path_z, path_th3):
         joints = JointSpacePoint(th1[1], th2[1], z[1], th3[1])
         tool = arm.forward_kinematics(joints)
