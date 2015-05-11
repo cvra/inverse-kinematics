@@ -91,8 +91,9 @@ class DebraArm(Scara):
 
         joints = super(DebraArm, self).get_joints()
 
-        th3 = pi / 2 - (gripper_hdg + joints.theta1 + joints.theta2)
-        joints = joints._replace(z=z, theta3=th3)
+        theta3 = pi / 2 - (gripper_hdg + joints.theta1 + joints.theta2)
+        theta3 = (theta3 + pi) % (2 * pi) - pi # Stay between -pi and pi
+        joints = joints._replace(z=z, theta3=theta3)
 
         return joints
 
@@ -139,10 +140,10 @@ class DebraArm(Scara):
         jacobian = self.compute_jacobian()
         tool_vel = jacobian * joints_vel
 
-        return RobotSpacePoint(tool_vel[0], \
-                               tool_vel[1], \
-                               tool_vel[2], \
-                               tool_vel[3])
+        return RobotSpacePoint(float(tool_vel[0]), \
+                               float(tool_vel[1]), \
+                               float(tool_vel[2]), \
+                               float(tool_vel[3]))
 
     def get_joints_vel(self, tool_vel):
         """
@@ -162,10 +163,10 @@ class DebraArm(Scara):
 
         joints_vel = np.linalg.solve(jacobian, tool_vel)
 
-        return JointSpacePoint(joints_vel[0], \
-                               joints_vel[1], \
-                               joints_vel[2], \
-                               joints_vel[3])
+        return JointSpacePoint(float(joints_vel[0]), \
+                               float(joints_vel[1]), \
+                               float(joints_vel[2]), \
+                               float(joints_vel[3]))
 
     def get_path(self, start_pos, start_vel, target_pos, target_vel, delta_t):
         """

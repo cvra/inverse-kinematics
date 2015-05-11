@@ -150,6 +150,11 @@ class Joint(object):
         traj_vel = np.concatenate((traj_vel_1, traj_vel_2, traj_vel_3), axis=0)
         traj_acc = np.concatenate((traj_acc_1, traj_acc_2, traj_acc_3), axis=0)
 
+        time = time.tolist()
+        traj_pos = traj_pos.tolist()
+        traj_vel = traj_vel.tolist()
+        traj_acc = traj_acc.tolist()
+
         return zip(time, traj_pos, traj_vel, traj_acc)
 
     def polynomial_piece_profile(self, polynome, start, stop, delta):

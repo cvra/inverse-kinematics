@@ -102,6 +102,9 @@ class Scara(object):
                     atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
                           (l - lsq) / (2 * self.l1 * self.l2))
 
+        theta1 = (theta1 + pi) % (2 * pi) - pi # Stay between -pi and pi
+        theta2 = (theta2 + pi) % (2 * pi) - pi # Stay between -pi and pi
+
         return JointSpacePoint(theta1, theta2, 0, 0)
 
     def get_detailed_pos(self):
