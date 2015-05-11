@@ -44,15 +44,16 @@ class Joint(object):
         delta_p = pos_f - pos_i
         sign_traj = self.trajectory_sign(pos_i, vel_i, pos_f, vel_f)
 
-        if vel_i == 0 and vel_f == 0:
-            vel_c = EPSILON
-        elif abs(vel_i) > abs(vel_f):
-            vel_c = vel_i
-        else:
+        if abs(vel_i) < EPSILON and abs(vel_f) < EPSILON:
+            vel_c = EPSILON # ensure we use a trapezoidal trajectory
+        elif abs(vel_i) < abs(vel_f):
             vel_c = vel_f
+        else:
+            vel_c = vel_i
 
         tf_lim = (delta_p / vel_c) \
-                 + (0.5 * sign_traj * vel_c / constraint.acc_max)
+                 + (0.5 * sign_traj * (vel_c - vel_f) / constraint.acc_max) \
+                 + (0.5 * sign_traj * (vel_i - vel_c) / constraint.acc_max)
 
         # Determine shape of trajectory
         if tf_sync < tf_lim or (vel_i == 0 and vel_f == 0):
@@ -74,6 +75,10 @@ class Joint(object):
         # Compute cruise speed using equation 30
         delta_p = pos_f - pos_i
         sign_traj = self.trajectory_sign(pos_i, vel_i, pos_f, vel_f)
+        # Avoid division by 0
+        if sign_traj == 0:
+            sign_traj = 1
+
         b = constraint.acc_max * tf_sync + sign_traj * vel_i
 
         vel_c = 0.5 * (b - sqrt(b**2 \
@@ -81,7 +86,7 @@ class Joint(object):
                                 - 2 * (vel_i - vel_f)**2))
 
         return self.generic_profile(pos_i, vel_i, pos_f, vel_f,
-                                    tf_sync, tf_lim, delta_t, sign_traj, vel_c)
+                                    tf_sync, tf_lim, delta_t, sign_traj, 1, vel_c)
 
     def doubleramp_profile(self, pos_i, vel_i, pos_f, vel_f,
                            tf_sync, tf_lim, delta_t):
@@ -93,39 +98,39 @@ class Joint(object):
         # Compute cruise speed using equation 31
         delta_p = pos_f - pos_i
         sign_traj = self.trajectory_sign(pos_i, vel_i, pos_f, vel_f)
+        # Avoid division by 0
+        if sign_traj == 0:
+            sign_traj = 1
 
         vel_c = (sign_traj * delta_p \
                  - 0.5 * ((vel_i - vel_f)**2 / constraint.acc_max)) \
                 / (tf_sync - ((vel_i  - vel_f) / (sign_traj * constraint.acc_max)))
 
         return self.generic_profile(pos_i, vel_i, pos_f, vel_f,
-                                    tf_sync, tf_lim, delta_t, sign_traj, vel_c)
+                                    tf_sync, tf_lim, delta_t, sign_traj, 1, vel_c)
 
     def generic_profile(self, pos_i, vel_i, pos_f, vel_f,
-                        tf_sync, tf_lim, delta_t, sign_traj, vel_c):
+                        tf_sync, tf_lim, delta_t, sign_traj, sign_sync, vel_c):
         """
         Generate a generic profile (valid for trapezoidal and double ramp)
         """
         constraint = self.constraints
 
         # Equation 35
-        sign_sync = np.sign(tf_lim - tf_sync)
-
-        t1 = abs((vel_c - vel_i) / constraint.acc_max)
-
-        t2 = tf_sync - abs((vel_c - vel_f) / constraint.acc_max)
+        t1 = (sign_traj * vel_c - vel_i) / (sign_traj * constraint.acc_max)
+        t2 = tf_sync - abs(vel_c - vel_f) / constraint.acc_max
 
         # First piece
         a0 = float(pos_i)
         a1 = float(vel_i)
-        a2 = float(0.5 * sign_traj * constraint.acc_max)
+        a2 = float(0.5 * sign_traj * sign_sync * constraint.acc_max)
 
         time_1, traj_pos_1, traj_vel_1, traj_acc_1 = \
             self.polynomial_piece_profile([a2, a1, a0], 0, t1, delta_t)
 
         # Second piece
         a0 = float(np.polyval([a2, a1, a0], t1))
-        a1 = float(vel_c)
+        a1 = float(sign_traj * vel_c)
         a2 = float(0)
 
         time_2, traj_pos_2, traj_vel_2, traj_acc_2 = \
@@ -133,12 +138,11 @@ class Joint(object):
 
         # Third piece
         a0 = float(np.polyval([a2, a1, a0], t2 - t1))
-        a1 = float(vel_c)
+        a1 = float(sign_traj * vel_c)
         a2 = float(- 0.5 * sign_traj * constraint.acc_max)
 
         time_3, traj_pos_3, traj_vel_3, traj_acc_3 = \
-            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync + delta_t,
-                                          delta_t)
+            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync, delta_t)
 
         # Combine piecewise trajectory
         time = np.concatenate((time_1, time_2, time_3), axis=0)

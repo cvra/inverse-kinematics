@@ -8,9 +8,9 @@ class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
     def __init__(self, l1=1.0, l2=1.0,
-                 theta1_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
-                 theta2_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
-                 theta3_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
+                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
+                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
+                 theta3_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
                  z_constraints=JointMinMaxConstraint(0,1, -1,1, -1,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector3D(0,0,0),
@@ -154,6 +154,9 @@ class DebraArm(Scara):
                               [tool_vel.gripper_hdg]])
         jacobian = self.compute_jacobian()
 
+        if np.linalg.norm(tool_vel) < EPSILON:
+            return JointSpacePoint(0, 0, 0, 0)
+
         if abs(np.linalg.det(jacobian)) < EPSILON:
             raise ValueError('Singularity')
 
@@ -163,3 +166,85 @@ class DebraArm(Scara):
                                joints_vel[1], \
                                joints_vel[2], \
                                joints_vel[3])
+
+    def get_path(self, start_pos, start_vel, target_pos, target_vel, delta_t):
+        """
+        Generates a time optimal trajectory for the whole arm
+        Input:
+        start_pos - start position in tool space
+        start_vel - start velocity in tool space
+        target_pos - target position in tool space
+        target_vel - target velocity in tool space
+        """
+        # Determine current (start) state and final (target) state
+        start_joints_pos = self.inverse_kinematics(start_pos)
+        start_joints_vel = self.get_joints_vel(start_vel)
+
+        target_joints_pos = self.inverse_kinematics(target_pos)
+        target_joints_vel = self.get_joints_vel(target_vel)
+
+        # Get synchronisation time
+        tf_sync = self.synchronisation_time(start_joints_pos,
+                                            start_joints_vel,
+                                            target_joints_pos,
+                                            target_joints_vel)
+
+        # Get trajectories for each joint
+        traj_theta1 = self.theta1_axis.get_path(start_joints_pos.theta1,
+                                                start_joints_vel.theta1,
+                                                target_joints_pos.theta1,
+                                                target_joints_vel.theta1,
+                                                tf_sync,
+                                                delta_t)
+
+        traj_theta2 = self.theta2_axis.get_path(start_joints_pos.theta2,
+                                                start_joints_vel.theta2,
+                                                target_joints_pos.theta2,
+                                                target_joints_vel.theta2,
+                                                tf_sync,
+                                                delta_t)
+
+        traj_z = self.z_axis.get_path(start_joints_pos.z,
+                                      start_joints_vel.z,
+                                      target_joints_pos.z,
+                                      target_joints_vel.z,
+                                      tf_sync,
+                                      delta_t)
+
+        traj_theta3 = self.theta3_axis.get_path(start_joints_pos.theta3,
+                                                start_joints_vel.theta3,
+                                                target_joints_pos.theta3,
+                                                target_joints_vel.theta3,
+                                                tf_sync,
+                                                delta_t)
+
+        return traj_theta1, traj_theta2, traj_z, traj_theta3
+
+    def synchronisation_time(self, start_pos, start_vel, target_pos, target_vel):
+        """
+        Return largest time to destination to use slowest joint as synchronisation
+        reference
+        """
+        # Compute time to destination for all joints
+        ttd_theta1 = self.theta1_axis.time_to_destination(start_pos.theta1,
+                                                          start_vel.theta1,
+                                                          target_pos.theta1,
+                                                          target_vel.theta1)
+
+        ttd_theta2 = self.theta2_axis.time_to_destination(start_pos.theta2,
+                                                          start_vel.theta2,
+                                                          target_pos.theta2,
+                                                          target_vel.theta2)
+
+        ttd_z = self.z_axis.time_to_destination(start_pos.z,
+                                                start_vel.z,
+                                                target_pos.z,
+                                                target_vel.z)
+
+        ttd_theta3 = self.theta3_axis.time_to_destination(start_pos.theta3,
+                                                          start_vel.theta3,
+                                                          target_pos.theta3,
+                                                          target_vel.theta3)
+
+        # Return the largest one
+        return np.amax([ttd_theta1.tf, ttd_theta2.tf, ttd_theta3.tf, ttd_z.tf])

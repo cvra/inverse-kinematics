@@ -7,8 +7,8 @@ class Scara(object):
     "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
 
     def __init__(self, l1=1.0, l2=1.0,
-                 theta1_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
-                 theta2_constraints=JointMinMaxConstraint(-pi/2,pi/2, -1,1, -1,1),
+                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
+                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector2D(0,0),
                  flip_x=FLIP_RIGHT_HAND):
@@ -145,6 +145,9 @@ class Scara(object):
         """
         tool_vel = np.matrix([[tool_vel.x], [tool_vel.y]])
         jacobian = self.compute_jacobian()
+
+        if np.linalg.norm(tool_vel) < EPSILON:
+            return JointSpacePoint(0, 0, 0, 0)
 
         if abs(np.linalg.det(jacobian)) < EPSILON:
             raise ValueError('Singularity')

@@ -1,6 +1,5 @@
 import pygame, sys, time
 from invkin.Datatypes import *
-from invkin.PathPlanner import *
 from invkin import DebraArm
 from math import cos, sin, pi
 
@@ -65,26 +64,13 @@ def main():
                 tool_prev = tool
                 tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
 
-                if MODE == PLAN_JOINT_SPACE:
-                    path_th1, path_th2, path_z, path_th3 = \
-                        get_path_joint_space(arm,
-                                             tool_prev,
-                                             RobotSpacePoint(0,0,0,0),
-                                             tool,
-                                             RobotSpacePoint(0,0,0,0),
-                                             DURATION,
-                                             DELTA_T)
-                elif MODE == PLAN_ROBOT_SPACE:
-                    path_th1, path_th2, path_z, path_th3 = \
-                        get_path_robot_space(arm,
-                                             tool_prev,
-                                             RobotSpacePoint(0,0,0,0),
-                                             tool,
-                                             RobotSpacePoint(0,0,0,0),
-                                             DURATION,
-                                             DELTA_T)
+                pth1, pth2, pz, pth3 = arm.get_path(tool_prev,
+                                                    RobotSpacePoint(0,0,0,0),
+                                                    tool,
+                                                    RobotSpacePoint(0,0,0,0),
+                                                    DELTA_T)
 
-                draw_trajectory(arm, path_th1, path_th2, path_z, path_th3, DELTA_T)
+                draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)
 
         if not paused:
             SCREEN.fill(BLACK)
