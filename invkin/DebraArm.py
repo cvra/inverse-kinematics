@@ -257,14 +257,17 @@ class DebraArm(Scara):
         # Return the largest one
         return np.amax([ttd_theta1.tf, ttd_theta2.tf, ttd_theta3.tf, ttd_z.tf])
 
-    def get_path_xyz(self, start_pos, start_vel, target_pos, target_vel, delta_t):
+    def get_path_xyz(self, start_pos, start_vel, target_pos, target_vel, delta_t,
+                     output='joint'):
         """
         Generates a trajectory for the whole arm in robot space
         Input:
-        start_pos - start position in tool space
-        start_vel - start velocity in tool space
+        start_pos  - start position in tool space
+        start_vel  - start velocity in tool space
         target_pos - target position in tool space
         target_vel - target velocity in tool space
+        delta_t    - time step
+        output     - select between tool space and joint space trajectories
         """
         # Determine current (start) state and final (target) state
         start_joints_pos = self.inverse_kinematics(start_pos)
@@ -305,12 +308,14 @@ class DebraArm(Scara):
                                                   tf_sync,
                                                   delta_t)
 
-        th1, th2, z, th3 = self.xyz_to_joint_trajectory(traj_x,
-                                                        traj_y,
-                                                        traj_z,
-                                                        traj_gripper)
-
-        return th1, th2, z, th3
+        if output == 'robot' or output == 'tool':
+            return traj_x, traj_y, traj_z, traj_gripper
+        else:
+            th1, th2, z, th3 = self.xyz_to_joint_trajectory(traj_x,
+                                                            traj_y,
+                                                            traj_z,
+                                                            traj_gripper)
+            return th1, th2, z, th3
 
     def sync_time_xyz(self, start_pos, start_vel, target_pos, target_vel):
         """

@@ -142,7 +142,7 @@ class Joint(object):
         a2 = float(- 0.5 * sign_traj * constraint.acc_max)
 
         time_3, traj_pos_3, traj_vel_3, traj_acc_3 = \
-            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync, delta_t)
+            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync+delta_t, delta_t)
 
         # Combine piecewise trajectory
         time = np.concatenate((time_1, time_2, time_3), axis=0)
