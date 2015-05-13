@@ -7,7 +7,7 @@ class JointTestCase(unittest.TestCase):
         """
         Check that trajectory feasibility is well determined
         """
-        joint = Joint.Joint()
+        joint = Joint.Joint('joint')
 
         # Position too far
         with self.assertRaises(ValueError):
@@ -25,7 +25,7 @@ class JointTestCase(unittest.TestCase):
         """
         Check that trajectory sign is well determined
         """
-        joint = Joint.Joint()
+        joint = Joint.Joint('joint')
 
         # Positive
         sign = joint.trajectory_sign(0, 0, 0.5, 0.5)
@@ -43,7 +43,7 @@ class JointTestCase(unittest.TestCase):
         """
         Check that time to destination is well computed
         """
-        joint = Joint.Joint()
+        joint = Joint.Joint('joint')
 
         # Position too far
         with self.assertRaises(ValueError):
@@ -82,45 +82,7 @@ class JointTestCase(unittest.TestCase):
         """
         Check that path generation is correct for veli=0, velf=0
         """
-        joint = Joint.Joint()
-
-        posi = 0
-        veli = 0
-        posf = 1
-        velf = 0
-        traj = joint.get_path(posi, veli, posf, velf, 5, 0.01)
-        time = []
-        pos = []
-        vel = []
-        acc = []
-        for t in traj:
-            time.append(t[0])
-            pos.append(t[1])
-            vel.append(t[2])
-            acc.append(t[3])
-        self.assertAlmostEqual(pos[0], posi, places=4)
-        self.assertAlmostEqual(pos[-1], posf, places=4)
-        self.assertAlmostEqual(vel[0], veli, places=1)
-        self.assertAlmostEqual(vel[-1], velf, places=1)
-
-        posi = 0.5
-        veli = 0
-        posf = 0
-        velf = 0
-        traj = joint.get_path(posi, veli, posf, velf, 5, 0.01)
-        time = []
-        pos = []
-        vel = []
-        acc = []
-        for t in traj:
-            time.append(t[0])
-            pos.append(t[1])
-            vel.append(t[2])
-            acc.append(t[3])
-        self.assertAlmostEqual(pos[0], posi, places=4)
-        self.assertAlmostEqual(pos[-1], posf, places=4)
-        self.assertAlmostEqual(vel[0], veli, places=1)
-        self.assertAlmostEqual(vel[-1], velf, places=1)
+        joint = Joint.Joint('joint')
 
         posi = 1
         veli = 0

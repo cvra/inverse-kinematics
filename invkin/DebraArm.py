@@ -150,6 +150,10 @@ class DebraArm(Scara):
         """
         Returns the inverse of the jacobian matrix at current state
         """
+        if abs(self.joints.theta2) < EPSILON \
+           or abs(self.joints.theta2 - pi) < EPSILON:
+            raise ValueError('Singularity')
+
         a = - self.l1 * np.sin(self.joints.theta1) \
             - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
         b = - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
@@ -208,10 +212,6 @@ class DebraArm(Scara):
 
         if np.linalg.norm(tool_vel) < EPSILON:
             return JointSpacePoint(0, 0, 0, 0)
-
-        if abs(self.joints.theta2) < EPSILON \
-           or abs(self.joints.theta2 - pi) < EPSILON:
-            raise ValueError('Singularity')
 
         joints_vel = jacobian_inv * tool_vel
 
