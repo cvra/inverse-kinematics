@@ -108,10 +108,10 @@ class DebraArm(Scara):
         """
         p0, p1, p2 = super(DebraArm, self).get_detailed_pos()
 
-        x3 = self.tool.x + self.flip_x * l3 * cos(self.joints.theta1 \
+        x3 = self.tool.x + self.flip_x * l3 * np.cos(self.joints.theta1 \
                                                   + self.joints.theta2 \
                                                   + self.joints.theta3)
-        y3 = self.tool.y + l3 * sin(self.joints.theta1 \
+        y3 = self.tool.y + l3 * np.sin(self.joints.theta1 \
                                     + self.joints.theta2 \
                                     + self.joints.theta3)
 
@@ -121,20 +121,59 @@ class DebraArm(Scara):
         """
         Returns jacobian matrix at current state
         """
-        dx_dth1 = - self.l1 * sin(self.joints.theta1) \
-                  - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
-        dx_dth2 = - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+        sin_th1_th2 = np.sin(self.joints.theta1 + self.joints.theta2)
+        cos_th1_th2 = np.cos(self.joints.theta1 + self.joints.theta2)
 
-        dy_dth1 = self.l1 * cos(self.joints.theta1) \
-                  + self.l2 * cos(self.joints.theta1 + self.joints.theta2)
-        dy_dth2 = self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+        dx_dth1 = - self.l1 * np.sin(self.joints.theta1) \
+                  - self.l2 * sin_th1_th2
+        dx_dth2 = - self.l2 * sin_th1_th2
+
+        dy_dth1 = self.l1 * np.cos(self.joints.theta1) \
+                  + self.l2 * cos_th1_th2
+        dy_dth2 = self.l2 * cos_th1_th2
 
         return np.matrix([[dx_dth1, dx_dth2, 0,  0], \
                           [dy_dth1, dy_dth2, 0,  0], \
                           [      0,       0, 1,  0], \
                           [     -1,      -1, 0, -1]])
 
-    def get_tool_vel(self, joints_vel):
+    def compute_jacobian_inv(self):
+        """
+        Returns the inverse of the jacobian matrix at current state
+        """
+        a = - self.l1 * np.sin(self.joints.theta1) \
+            - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
+        b = - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
+
+        c = self.l1 * np.cos(self.joints.theta1) \
+            + self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
+        d = self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
+
+        det_inv = 1 / (self.l1 * self.l2 * np.sin(self.joints.theta2))
+
+        return np.matrix([[       d * det_inv,       -b * det_inv, 0,  0], \
+                          [      -c * det_inv,        a * det_inv, 0,  0], \
+                          [                 0,                  0, 1,  0], \
+                          [ (c - d) * det_inv, -(a - b) * det_inv, 0, -1]])
+
+    def compute_jacobian_dot(self):
+        """
+        Returns jacobian derivative matrix at current state
+        """
+        d2x_dth1_2 = - self.l1 * np.cos(self.joints.theta1) \
+                  - self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
+        d2x_dth2_2 = - self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
+
+        d2y_dth1_2 = - self.l1 * np.sin(self.joints.theta1) \
+                  - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
+        d2y_dth2_2 = - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
+
+        return np.matrix([[d2x_dth1_2, d2x_dth2_2, 0,  0], \
+                          [d2y_dth1_2, d2y_dth2_2, 0,  0], \
+                          [         0,          0, 1,  0], \
+                          [        -1,         -1, 0, -1]])
+
+    def get_tool_vel(self, joints_vel, jacobian):
         """
         Computes current tool velocity using jacobian
         """
@@ -142,7 +181,6 @@ class DebraArm(Scara):
                                 [joints_vel.theta2], \
                                 [joints_vel.z], \
                                 [joints_vel.theta3]])
-        jacobian = self.compute_jacobian()
         tool_vel = jacobian * joints_vel
 
         return RobotSpacePoint(float(tool_vel[0]), \
@@ -150,7 +188,51 @@ class DebraArm(Scara):
                                float(tool_vel[2]), \
                                float(tool_vel[3]))
 
-    def get_joints_vel(self, tool_vel):
+    def get_joints_vel(self, tool_vel, jacobian_inv):
+        """
+        Computes current tool velocity using jacobian
+        """
+        tool_vel = np.matrix([[tool_vel.x], \
+                              [tool_vel.y], \
+                              [tool_vel.z], \
+                              [tool_vel.gripper_hdg]])
+
+        if np.linalg.norm(tool_vel) < EPSILON:
+            return JointSpacePoint(0, 0, 0, 0)
+
+        if abs(self.joints.theta2) < EPSILON \
+           or abs(self.joints.theta2 - pi) < EPSILON:
+            raise ValueError('Singularity')
+
+        joints_vel = jacobian_inv * tool_vel
+
+        return JointSpacePoint(float(joints_vel[0]), \
+                               float(joints_vel[1]), \
+                               float(joints_vel[2]), \
+                               float(joints_vel[3]))
+
+    def get_tool_acc(self, joints_vel, joints_acc, jacobian):
+        """
+        Computes current tool acceleration using jacobian
+        """
+        joints_vel = np.matrix([[joints_vel.theta1], \
+                                [joints_vel.theta2], \
+                                [joints_vel.z], \
+                                [joints_vel.theta3]])
+        joints_acc = np.matrix([[joints_acc.theta1], \
+                                [joints_acc.theta2], \
+                                [joints_acc.z], \
+                                [joints_acc.theta3]])
+        jacobian = self.compute_jacobian()
+        jacobian_dot = self.compute_jacobian_dot()
+        tool_acc = jacobian * joints_acc + jacobian_dot * joints_vel
+
+        return RobotSpacePoint(float(tool_acc[0]), \
+                               float(tool_acc[1]), \
+                               float(tool_acc[2]), \
+                               float(tool_acc[3]))
+
+    def get_joints_acc(self, tool_vel, joints_vel):
         """
         Computes current tool velocity using jacobian
         """
@@ -184,10 +266,12 @@ class DebraArm(Scara):
         """
         # Determine current (start) state and final (target) state
         start_joints_pos = self.inverse_kinematics(start_pos)
-        start_joints_vel = self.get_joints_vel(start_vel)
+        jacobian_inv = self.compute_jacobian_inv()
+        start_joints_vel = self.get_joints_vel(start_vel, jacobian_inv)
 
         target_joints_pos = self.inverse_kinematics(target_pos)
-        target_joints_vel = self.get_joints_vel(target_vel)
+        jacobian_inv = self.compute_jacobian_inv()
+        target_joints_vel = self.get_joints_vel(target_vel, jacobian_inv)
 
         # Get synchronisation time
         tf_sync = self.synchronisation_time(start_joints_pos,
@@ -223,8 +307,6 @@ class DebraArm(Scara):
                                                  target_joints_vel.theta3,
                                                  tf_sync,
                                                  delta_t)
-
-        print(traj_theta1)
 
         return traj_theta1, traj_theta2, traj_z, traj_theta3
 
@@ -269,12 +351,17 @@ class DebraArm(Scara):
         delta_t    - time step
         output     - select between tool space and joint space trajectories
         """
+        # Project constraints on the path to constraints on the axis
+        self.path_to_axis_constraint(start_pos, target_pos)
+
         # Determine current (start) state and final (target) state
         start_joints_pos = self.inverse_kinematics(start_pos)
-        start_joints_vel = self.get_joints_vel(start_vel)
+        jacobian_inv = self.compute_jacobian_inv()
+        start_joints_vel = self.get_joints_vel(start_vel, jacobian_inv)
 
         target_joints_pos = self.inverse_kinematics(target_pos)
-        target_joints_vel = self.get_joints_vel(target_vel)
+        jacobian_inv = self.compute_jacobian_inv()
+        target_joints_vel = self.get_joints_vel(target_vel, jacobian_inv)
 
         # Get synchronisation time
         tf_sync = self.sync_time_xyz(start_pos, start_vel, target_pos, target_vel)
@@ -361,8 +448,9 @@ class DebraArm(Scara):
             acc = RobotSpacePoint(x[3], y[3], z[3], grp[3])
 
             joints_pos = self.inverse_kinematics(pos)
-            joints_vel = self.get_joints_vel(vel)
-            joints_acc = self.get_joints_vel(acc)
+            jacobian_inv = self.compute_jacobian_inv()
+            joints_vel = self.get_joints_vel(vel, jacobian_inv)
+            joints_acc = self.get_joints_vel(acc, jacobian_inv)
 
             traj_joint_th1.append((x[0],
                                    joints_pos[0],

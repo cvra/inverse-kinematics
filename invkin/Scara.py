@@ -1,6 +1,5 @@
 from invkin.Datatypes import *
 from invkin.Joint import Joint
-from math import sqrt, cos, sin, acos, atan2, pi
 import numpy as np
 
 class Scara(object):
@@ -66,10 +65,10 @@ class Scara(object):
         """
         Computes tool position knowing joint positions
         """
-        x = self.flip_x * (self.l1 * cos(self.joints.theta1) \
-            + self.l2 * cos(self.joints.theta1 + self.joints.theta2))
-        y = self.l1 * sin(self.joints.theta1) \
-            + self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+        x = self.flip_x * (self.l1 * np.cos(self.joints.theta1) \
+            + self.l2 * np.cos(self.joints.theta1 + self.joints.theta2))
+        y = self.l1 * np.sin(self.joints.theta1) \
+            + self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
 
         x += self.origin.x
         y += self.origin.y
@@ -89,17 +88,17 @@ class Scara(object):
         l = x ** 2 + y ** 2
         lsq = self.lsq
 
-        cos_gamma = (l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * sqrt(l))
+        cos_gamma = (l + self.l1 ** 2 - self.l2 ** 2) / (2 * self.l1 * np.sqrt(l))
 
         # Numerical errors can make abs(cos_gamma) > 1
         if(cos_gamma > 1 - EPSILON or cos_gamma < -1 + EPSILON):
             gamma = 0.0
         else:
-            gamma = self.flip_elbow * acos(cos_gamma)
+            gamma = self.flip_elbow * np.arccos(cos_gamma)
 
-        theta1 = atan2(y, self.flip_x * x) - gamma
+        theta1 = np.arctan2(y, self.flip_x * x) - gamma
         theta2 = self.flip_elbow * \
-                    atan2(sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2)) ** 2), \
+                 np.arctan2(np.sqrt(1 - ((l - lsq) / (2 * self.l1 * self.l2))**2), \
                           (l - lsq) / (2 * self.l1 * self.l2))
 
         theta1 = (theta1 + pi) % (2 * pi) - pi # Stay between -pi and pi
@@ -111,8 +110,8 @@ class Scara(object):
         """
         Returns origin, position of end of link 1, position of end of link 2
         """
-        x1 = self.flip_x * self.l1 * cos(self.joints.theta1) + self.origin.x
-        y1 = self.l1 * sin(self.joints.theta1) + self.origin.y
+        x1 = self.flip_x * self.l1 * np.cos(self.joints.theta1) + self.origin.x
+        y1 = self.l1 * np.sin(self.joints.theta1) + self.origin.y
 
         return self.origin, Vector2D(x1, y1), Vector2D(self.tool.x, self.tool.y)
 
@@ -120,13 +119,13 @@ class Scara(object):
         """
         Returns jacobian matrix at current state
         """
-        dx_dth1 = - self.l1 * sin(self.joints.theta1) \
-                  - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
-        dx_dth2 = - self.l2 * sin(self.joints.theta1 + self.joints.theta2)
+        dx_dth1 = - self.l1 * np.sin(self.joints.theta1) \
+                  - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
+        dx_dth2 = - self.l2 * np.sin(self.joints.theta1 + self.joints.theta2)
 
-        dy_dth1 = self.l1 * cos(self.joints.theta1) \
-                  + self.l2 * cos(self.joints.theta1 + self.joints.theta2)
-        dy_dth2 = self.l2 * cos(self.joints.theta1 + self.joints.theta2)
+        dy_dth1 = self.l1 * np.cos(self.joints.theta1) \
+                  + self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
+        dy_dth2 = self.l2 * np.cos(self.joints.theta1 + self.joints.theta2)
 
         return np.matrix([[dx_dth1, dx_dth2], \
                           [dy_dth1, dy_dth2]])

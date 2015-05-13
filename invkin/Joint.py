@@ -1,5 +1,4 @@
 from invkin.Datatypes import *
-from math import sqrt, cos, sin, acos, atan2, pi
 import numpy as np
 
 class Joint(object):
@@ -81,7 +80,7 @@ class Joint(object):
 
         b = constraint.acc_max * tf_sync + sign_traj * vel_i
 
-        vel_c = 0.5 * (b - sqrt(b**2 \
+        vel_c = 0.5 * (b - np.sqrt(b**2 \
                                 - 4 * sign_traj * constraint.acc_max * delta_p \
                                 - 2 * (vel_i - vel_f)**2))
 
