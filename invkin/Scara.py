@@ -25,8 +25,8 @@ class Scara(object):
         self.joints = q0
         self.origin = origin
 
-        self.theta1_joint = Joint(theta1_constraints)
-        self.theta2_joint = Joint(theta2_constraints)
+        self.theta1_joint = Joint('theta1', theta1_constraints)
+        self.theta2_joint = Joint('theta2', theta2_constraints)
 
         if flip_x >= 0:
             self.flip_x = FLIP_RIGHT_HAND

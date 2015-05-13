@@ -16,8 +16,7 @@ RANGE_MAX = abs(L1 + L2)
 PLAN_ROBOT_SPACE = 1
 PLAN_JOINT_SPACE = 2
 MODE = PLAN_ROBOT_SPACE
-DURATION = 1.0
-DELTA_T = 0.05
+DELTA_T = 0.01
 
 # Display settings
 PX_PER_METER = 100
@@ -67,27 +66,34 @@ def main():
                 tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
 
                 if MODE == PLAN_JOINT_SPACE:
+                    start_time = time.time()
                     pth1, pth2, pz, pth3 = arm.get_path(tool_prev,
                                                         RobotSpacePoint(0,0,0,0),
                                                         tool,
                                                         RobotSpacePoint(0,0,0,0),
                                                         DELTA_T)
+                    elapsed_time = time.time() - start_time
+                    print('elapsed time: ', elapsed_time)
                 else:
+                    start_time = time.time()
                     pth1, pth2, pz, pth3 = arm.get_path_xyz(
                                                         tool_prev,
                                                         RobotSpacePoint(0,0,0,0),
                                                         tool,
                                                         RobotSpacePoint(0,0,0,0),
                                                         DELTA_T)
-                    px, py, pz, pgrp = arm.get_path_xyz(tool_prev,
-                                                        RobotSpacePoint(0,0,0,0),
-                                                        tool,
-                                                        RobotSpacePoint(0,0,0,0),
-                                                        DELTA_T,
-                                                        'robot')
-                    graph_trajectory(px, py, pz, pgrp)
+                    elapsed_time = time.time() - start_time
+                    print('elapsed time: ', elapsed_time)
+                    # px, py, pz, pgrp = arm.get_path_xyz(tool_prev,
+                    #                                     RobotSpacePoint(0,0,0,0),
+                    #                                     tool,
+                    #                                     RobotSpacePoint(0,0,0,0),
+                    #                                     DELTA_T,
+                    #                                     'robot')
+                    # graph_trajectory_xyz(px, py, pz, pgrp)
+                    # graph_trajectory_joint(pth1, pth2, pth3)
 
-                #draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)
+                draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)
 
         if not paused:
             SCREEN.fill(BLACK)
@@ -97,11 +103,16 @@ def main():
 
             pygame.display.update()
 
-def graph_trajectory(px, py, pz, pgrp):
+def graph_trajectory_xyz(px, py, pz, pgrp):
     graph_axis_trajectory(px, 'x')
     graph_axis_trajectory(py, 'y')
     graph_axis_trajectory(pz, 'z')
     graph_axis_trajectory(pgrp, 'grp')
+
+def graph_trajectory_joint(pth1, pth2, pth3):
+    graph_axis_trajectory(pth1, 'th1')
+    graph_axis_trajectory(pth2, 'th2')
+    graph_axis_trajectory(pth3, 'th3')
 
 def graph_axis_trajectory(axis, pdf_name):
     time = []
@@ -138,8 +149,8 @@ def draw_trajectory(arm, path_th1, path_th2, path_z, path_th3, dt):
         tool = arm.forward_kinematics(joints)
         get_robot_new_state(arm, tool)
 
-        print("arm: ", "x:", arm.tool.x, "y:", arm.tool.y, \
-              "th1:", arm.joints.theta1, "th2:", arm.joints.theta2)
+        # print("arm: ", "x:", arm.tool.x, "y:", arm.tool.y, \
+        #       "th1:", arm.joints.theta1, "th2:", arm.joints.theta2)
 
         # Draw robot
         origin, p1, p2, p3, z = arm.get_detailed_pos(L3)

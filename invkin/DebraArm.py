@@ -1,16 +1,15 @@
 from invkin.Datatypes import *
 from invkin.Joint import Joint
 from invkin.Scara import Scara
-from math import pi, cos, sin
 import numpy as np
 
 class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
     def __init__(self, l1=1.0, l2=1.0,
-                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
-                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
-                 theta3_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
+                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
+                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
+                 theta3_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
                  z_constraints=JointMinMaxConstraint(0,1, -1,1, -1,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector3D(0,0,0),
@@ -29,15 +28,25 @@ class DebraArm(Scara):
         self.joints = q0
         self.origin = origin
 
-        self.theta1_joint = Joint(theta1_constraints)
-        self.theta2_joint = Joint(theta2_constraints)
-        self.theta3_joint = Joint(theta3_constraints)
-        self.z_joint = Joint(z_constraints)
+        self.theta1_joint = Joint('theta1', theta1_constraints)
+        self.theta2_joint = Joint('theta2', theta2_constraints)
+        self.theta3_joint = Joint('theta3', theta3_constraints)
+        self.z_joint = Joint('z', z_constraints)
 
-        self.x_axis = Joint(JointMinMaxConstraint(-(l1+l2),l1+l2, -1,1, -1,1))
-        self.y_axis = Joint(JointMinMaxConstraint(-(l1+l2),l1+l2, -1,1, -1,1))
-        self.z_axis = Joint(z_constraints)
-        self.gripper_axis = Joint(theta3_constraints)
+        self.x_axis = Joint('x', JointMinMaxConstraint(-(l1+l2),l1+l2, -1,1, -1,1))
+        self.y_axis = Joint('y', JointMinMaxConstraint(-(l1+l2),l1+l2, -1,1, -1,1))
+        self.z_axis = Joint('z', z_constraints)
+        self.gripper_axis = Joint('gripper', theta3_constraints)
+
+        vel_con = np.sqrt((l1 * theta1_constraints.vel_max) ** 2
+                       + (l2 * theta2_constraints.vel_max) ** 2)
+
+        acc_con = np.sqrt((l1 * theta1_constraints.acc_max) ** 2
+                       + (l2 * theta2_constraints.acc_max) ** 2)
+
+        self.path_constraints = JointMinMaxConstraint(-10*(l1+l2), 10*(l1+l2),
+                                                      -vel_con, vel_con,
+                                                      -acc_con, acc_con)
 
         if flip_x > 0:
             self.flip_x = FLIP_RIGHT_HAND
@@ -473,3 +482,35 @@ class DebraArm(Scara):
                                  joints_acc[2]))
 
         return traj_joint_th1, traj_joint_th2, traj_joint_z, traj_joint_th3
+
+    def path_to_axis_constraint(self, start_pos, target_pos):
+        """
+        Project path constraints to constraints on the axis
+        """
+        delta_x = abs(target_pos.x - start_pos.x)
+        delta_y = abs(target_pos.y - start_pos.y)
+
+        delta_s = np.sqrt(delta_x ** 2 + delta_y ** 2)
+
+        coef_x = delta_x / delta_s
+        coef_y = delta_y / delta_s
+
+        if coef_x > EPSILON:
+            self.x_axis.set_constraints(
+                self.x_axis.constraints._replace(
+                    vel_min=(self.path_constraints.vel_min * coef_x),
+                    vel_max=(self.path_constraints.vel_max * coef_x),
+                    acc_min=(self.path_constraints.acc_min * coef_x),
+                    acc_max=(self.path_constraints.acc_max * coef_x)
+                    )
+                )
+
+        if coef_y > EPSILON:
+            self.y_axis.set_constraints(
+                self.y_axis.constraints._replace(
+                    vel_min=(self.path_constraints.vel_min * coef_y),
+                    vel_max=(self.path_constraints.vel_max * coef_y),
+                    acc_min=(self.path_constraints.acc_min * coef_y),
+                    acc_max=(self.path_constraints.acc_max * coef_y)
+                    )
+                )

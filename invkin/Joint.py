@@ -4,7 +4,8 @@ import numpy as np
 class Joint(object):
     "Robot generic joint class"
 
-    def __init__(self, constraints=JointMinMaxConstraint(-1,1, -1,1, -1,1)):
+    def __init__(self, name, constraints=JointMinMaxConstraint(-1,1, -1,1, -1,1)):
+        self.name = name
         self.constraints = constraints
 
     def trajectory_is_feasible(self, pos_i, vel_i, pos_f, vel_f):
@@ -13,16 +14,18 @@ class Joint(object):
         """
         constraint = self.constraints
 
-        if pos_f > constraint.pos_max or pos_f < constraint.pos_min:
-            raise ValueError('Target position unreachable')
-        if vel_f > constraint.vel_max or vel_f < constraint.vel_min:
-            raise ValueError('Target velocity unreachable')
+        if pos_f > (constraint.pos_max + EPSILON) \
+           or pos_f < (constraint.pos_min - EPSILON):
+            raise ValueError('Target position unreachable by joint ' + self.name)
+        if vel_f > (constraint.vel_max + EPSILON) \
+           or vel_f < (constraint.vel_min) - EPSILON:
+            raise ValueError('Target velocity unreachable by joint ' + self.name)
 
         delta_p_dec = 0.5 * vel_f * abs(vel_f) / constraint.acc_max
 
-        if (pos_f + delta_p_dec) > constraint.pos_max \
-           or (pos_f + delta_p_dec) < constraint.pos_min:
-           raise ValueError('Target position unreachable at specified velocity')
+        if (pos_f + delta_p_dec) > (constraint.pos_max + EPSILON) \
+           or (pos_f + delta_p_dec) < (constraint.pos_min - EPSILON):
+           raise ValueError('Target position unreachable at specified velocity by joint ' + self.name)
 
         return TRUE
 
@@ -220,3 +223,9 @@ class Joint(object):
                        / constraint.acc_max
 
         return np.sign(delta_p - delta_p_crit)
+
+    def set_constraints(self, new_constraints):
+        self.constraints = new_constraints
+
+    def get_constraints(self):
+        return self.constraints
