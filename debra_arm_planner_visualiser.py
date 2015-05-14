@@ -76,22 +76,14 @@ def main():
                     print('elapsed time: ', elapsed_time)
                 else:
                     start_time = time.time()
-                    pth1, pth2, pz, pth3 = arm.get_path_xyz(
-                                                        tool_prev,
-                                                        RobotSpacePoint(0,0,0,0),
-                                                        tool,
-                                                        RobotSpacePoint(0,0,0,0),
-                                                        DELTA_T)
+                    pth1, pth2, pz, pth3, px, py, pz, pgrp = \
+                        arm.get_path_xyz(tool_prev, RobotSpacePoint(0,0,0,0),
+                                         tool, RobotSpacePoint(0,0,0,0),
+                                         DELTA_T, 'all')
                     elapsed_time = time.time() - start_time
                     print('elapsed time: ', elapsed_time)
-                    # px, py, pz, pgrp = arm.get_path_xyz(tool_prev,
-                    #                                     RobotSpacePoint(0,0,0,0),
-                    #                                     tool,
-                    #                                     RobotSpacePoint(0,0,0,0),
-                    #                                     DELTA_T,
-                    #                                     'robot')
-                    # graph_trajectory_xyz(px, py, pz, pgrp)
-                    # graph_trajectory_joint(pth1, pth2, pth3)
+                    graph_trajectory_xyz(px, py, pz, pgrp)
+                    graph_trajectory_joint(pth1, pth2, pth3)
 
                 draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)
 

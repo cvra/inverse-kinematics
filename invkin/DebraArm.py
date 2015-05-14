@@ -7,9 +7,9 @@ class DebraArm(Scara):
     "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
 
     def __init__(self, l1=1.0, l2=1.0,
-                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
-                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
-                 theta3_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -2,2),
+                 theta1_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -1,1),
+                 theta2_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -1,1),
+                 theta3_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -1,1),
                  z_constraints=JointMinMaxConstraint(0,1, -1,1, -1,1),
                  q0=JointSpacePoint(0,0,0,0),
                  origin=Vector3D(0,0,0),
@@ -405,13 +405,14 @@ class DebraArm(Scara):
                                                   tf_sync,
                                                   delta_t)
 
+        th1, th2, z, th3, px, py, pz, pgrp = \
+            self.xyz_to_joint_trajectory(traj_x, traj_y, traj_z, traj_gripper)
+
         if output == 'robot' or output == 'tool':
-            return traj_x, traj_y, traj_z, traj_gripper
+            return px, py, pz, pgrp
+        elif output == 'all' or output == 'both':
+            return th1, th2, z, th3, px, py, pz, pgrp
         else:
-            th1, th2, z, th3 = self.xyz_to_joint_trajectory(traj_x,
-                                                            traj_y,
-                                                            traj_z,
-                                                            traj_gripper)
             return th1, th2, z, th3
 
     def sync_time_xyz(self, start_pos, start_vel, target_pos, target_vel):
@@ -420,20 +421,14 @@ class DebraArm(Scara):
         reference
         """
         # Compute time to destination for all joints
-        ttd_x = self.x_axis.time_to_destination(start_pos.x,
-                                                start_vel.x,
-                                                target_pos.x,
-                                                target_vel.x)
+        ttd_x = self.x_axis.time_to_destination(start_pos.x, start_vel.x,
+                                                target_pos.x, target_vel.x)
 
-        ttd_y = self.y_axis.time_to_destination(start_pos.y,
-                                                start_vel.y,
-                                                target_pos.y,
-                                                target_vel.y)
+        ttd_y = self.y_axis.time_to_destination(start_pos.y, start_vel.y,
+                                                target_pos.y, target_vel.y)
 
-        ttd_z = self.z_axis.time_to_destination(start_pos.z,
-                                                start_vel.z,
-                                                target_pos.z,
-                                                target_vel.z)
+        ttd_z = self.z_axis.time_to_destination(start_pos.z, start_vel.z,
+                                                target_pos.z, target_vel.z)
 
         ttd_gripper = self.gripper_axis.time_to_destination(start_pos.gripper_hdg,
                                                             start_vel.gripper_hdg,
@@ -443,16 +438,21 @@ class DebraArm(Scara):
         # Return the largest one
         return np.amax([ttd_x.tf, ttd_y.tf, ttd_z.tf, ttd_gripper.tf])
 
-    def xyz_to_joint_trajectory(self, traj_x, traj_y, traj_z, traj_gripper):
+    def xyz_to_joint_trajectory(self, points_x, points_y, points_z, points_gripper):
         """
         Convert trajectory from robot space to joint space
         """
+        traj_x = []
+        traj_y = []
+        traj_z = []
+        traj_gripper = []
+
         traj_joint_th1 = []
         traj_joint_th2 = []
         traj_joint_th3 = []
         traj_joint_z = []
 
-        for x, y, z, grp in zip(traj_x, traj_y, traj_z, traj_gripper):
+        for x, y, z, grp in zip(points_x, points_y, points_z, points_gripper):
             pos = RobotSpacePoint(x[1], y[1], z[1], grp[1])
             vel = RobotSpacePoint(x[2], y[2], z[2], grp[2])
             acc = RobotSpacePoint(x[3], y[3], z[3], grp[3])
@@ -462,27 +462,19 @@ class DebraArm(Scara):
             joints_vel = self.get_joints_vel(vel, jacobian_inv)
             joints_acc = self.get_joints_vel(acc, jacobian_inv)
 
-            traj_joint_th1.append((x[0],
-                                   joints_pos[0],
-                                   joints_vel[0],
-                                   joints_acc[0]))
+            traj_joint_th1.append((x[0], joints_pos[0], joints_vel[0], joints_acc[0]))
+            traj_joint_th2.append((x[0], joints_pos[1], joints_vel[1], joints_acc[1]))
+            traj_joint_th3.append((x[0], joints_pos[3], joints_vel[3], joints_acc[3]))
+            traj_joint_z.append((x[0], joints_pos[2], joints_vel[2], joints_acc[2]))
 
-            traj_joint_th2.append((x[0],
-                                   joints_pos[1],
-                                   joints_vel[1],
-                                   joints_acc[1]))
+            # Rebuild original xyz trajectory
+            traj_x.append((x[0], x[1], x[2], x[3]))
+            traj_y.append((y[0], y[1], y[2], y[3]))
+            traj_z.append((z[0], z[1], z[2], z[3]))
+            traj_gripper.append((grp[0], grp[1], grp[2], grp[3]))
 
-            traj_joint_th3.append((x[0],
-                                   joints_pos[3],
-                                   joints_vel[3],
-                                   joints_acc[3]))
-
-            traj_joint_z.append((x[0],
-                                 joints_pos[2],
-                                 joints_vel[2],
-                                 joints_acc[2]))
-
-        return traj_joint_th1, traj_joint_th2, traj_joint_z, traj_joint_th3
+        return traj_joint_th1, traj_joint_th2, traj_joint_z, traj_joint_th3, \
+               traj_x, traj_y, traj_z, traj_gripper
 
     def path_to_axis_constraint(self, start_pos, target_pos):
         """

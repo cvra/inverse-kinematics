@@ -2,10 +2,12 @@ from invkin.Datatypes import *
 from invkin import DebraArm
 from math import pi, sqrt, cos, sin
 import numpy as np
+import random, time
 import unittest
 
 l1 = 1.0
 l2 = 0.5
+DELTA_T = 0.01
 
 class DebraArmTestCase(unittest.TestCase):
     def test_fwdkin(self):
@@ -235,6 +237,65 @@ class DebraArmTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             jacobian_inv = arm.compute_jacobian_inv()
             joints_vel = arm.get_joints_vel(tool_vel, jacobian_inv)
+
+    def test_path_xyz(self):
+        """
+        Checks that path generation in xyz outputs a trajectory that satisfies
+        initial and final states
+        """
+        arm = DebraArm.DebraArm(l1=l1, l2=l2)
+        arm.inverse_kinematics(RobotSpacePoint(0.99*(l1+l2), 0, 0, 0))
+        tool = arm.get_tool()
+
+        start_vel = RobotSpacePoint(0,0,0,0)
+        target_vel = RobotSpacePoint(0,0,0,0)
+
+        random.seed(42)
+        timing = []
+        print('\n')
+
+        # Generate random trajectories
+        for i in range(100):
+            tool_prev = tool
+
+            th_prev = np.arctan2(tool_prev.y, tool_prev.x)
+            r = random.uniform(abs(l1-l2), abs(l1+l2))
+            dth = random.uniform(-pi / 3, pi / 3)
+
+            x = r * np.cos(th_prev + dth)
+            y = r * np.sin(th_prev + dth)
+            z = random.uniform(arm.z_axis.constraints.pos_min,
+                               arm.z_axis.constraints.pos_max)
+            grp = random.uniform(arm.gripper_axis.constraints.pos_min,
+                                 arm.gripper_axis.constraints.pos_max)
+
+            tool = RobotSpacePoint(x, y, z, grp)
+            print('#', i, 'moving from:', (tool_prev.x, tool_prev.y), 'to:', (x, y))
+
+            starting_time = time.time()
+            px, py, pz, pgrp = arm.get_path_xyz(tool_prev,
+                                                RobotSpacePoint(0,0,0,0),
+                                                tool,
+                                                RobotSpacePoint(0,0,0,0),
+                                                DELTA_T,
+                                                'robot')
+            ending_time = time.time()
+            timing.append(ending_time - starting_time)
+
+            # Check start
+            self.assertAlmostEqual(px[0][1], tool_prev.x, places=3)
+            self.assertAlmostEqual(py[0][1], tool_prev.y, places=3)
+            self.assertAlmostEqual(pz[0][1], tool_prev.z, places=3)
+            self.assertAlmostEqual(pgrp[0][1], tool_prev.gripper_hdg, places=3)
+            # Check arrival
+            self.assertAlmostEqual(px[-1][1], tool.x, places=3)
+            self.assertAlmostEqual(py[-1][1], tool.y, places=3)
+            self.assertAlmostEqual(pz[-1][1], tool.z, places=3)
+            self.assertAlmostEqual(pgrp[-1][1], tool.gripper_hdg, places=3)
+
+        print('Computed ', len(timing), ' trajectories successfully')
+        print('Average computation time:', int(np.mean(timing) * 1e6), 'us',
+              '+/-', int(np.std(timing) * 1e6), 'us')
 
 if __name__ == '__main__':
     unittest.main()
