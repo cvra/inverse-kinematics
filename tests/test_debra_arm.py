@@ -179,7 +179,7 @@ class DebraArmTestCase(unittest.TestCase):
 
         joints_vel = JointSpacePoint(0, 0, 0, 0)
         jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel, jacobian)
+        tool_vel = arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, 0)
         self.assertAlmostEqual(tool_vel.y, 0)
         self.assertAlmostEqual(tool_vel.z, 0)
@@ -187,7 +187,7 @@ class DebraArmTestCase(unittest.TestCase):
 
         joints_vel = JointSpacePoint(1, 1, 1, 1)
         jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel, jacobian)
+        tool_vel = arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, 0)
         self.assertAlmostEqual(tool_vel.y, (l1 + l2) * joints_vel.theta1 \
                                             + l2 * joints_vel.theta2)
@@ -200,7 +200,7 @@ class DebraArmTestCase(unittest.TestCase):
         tool = arm.forward_kinematics(joints)
         joints_vel = JointSpacePoint(1, 1, 1, 1)
         jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel, jacobian)
+        tool_vel = arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, - l2 * (joints_vel.theta1 + joints_vel.theta2))
         self.assertAlmostEqual(tool_vel.y, l1 * joints_vel.theta1)
         self.assertAlmostEqual(tool_vel.z, 1)
@@ -218,7 +218,7 @@ class DebraArmTestCase(unittest.TestCase):
         tool = arm.forward_kinematics(joints)
         tool_vel = RobotSpacePoint(0, 0, 0, 0)
         jacobian_inv = arm.compute_jacobian_inv()
-        joints_vel = arm.get_joints_vel(tool_vel, jacobian_inv)
+        joints_vel = arm.get_joints_vel(tool_vel)
         self.assertAlmostEqual(joints_vel.theta1, 0)
         self.assertAlmostEqual(joints_vel.theta2, 0)
         self.assertAlmostEqual(joints_vel.theta3, 0)
@@ -229,14 +229,14 @@ class DebraArmTestCase(unittest.TestCase):
         tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
             jacobian_inv = arm.compute_jacobian_inv()
-            joints_vel = arm.get_joints_vel(tool_vel, jacobian_inv)
+            joints_vel = arm.get_joints_vel(tool_vel)
 
         joints = JointSpacePoint(0, pi, 0, 0)
         tool = arm.forward_kinematics(joints)
         tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
             jacobian_inv = arm.compute_jacobian_inv()
-            joints_vel = arm.get_joints_vel(tool_vel, jacobian_inv)
+            joints_vel = arm.get_joints_vel(tool_vel)
 
     def test_path_xyz(self):
         """
