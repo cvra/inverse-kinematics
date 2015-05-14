@@ -220,51 +220,6 @@ class DebraArm(Scara):
                                float(joints_vel[2]), \
                                float(joints_vel[3]))
 
-    def get_tool_acc(self, joints_vel, joints_acc, jacobian):
-        """
-        Computes current tool acceleration using jacobian
-        """
-        joints_vel = np.matrix([[joints_vel.theta1], \
-                                [joints_vel.theta2], \
-                                [joints_vel.z], \
-                                [joints_vel.theta3]])
-        joints_acc = np.matrix([[joints_acc.theta1], \
-                                [joints_acc.theta2], \
-                                [joints_acc.z], \
-                                [joints_acc.theta3]])
-
-        jacobian = self.compute_jacobian()
-        jacobian_dot = self.compute_jacobian_dot()
-
-        tool_acc = jacobian * joints_acc + jacobian_dot * joints_vel
-
-        return RobotSpacePoint(float(tool_acc[0]), \
-                               float(tool_acc[1]), \
-                               float(tool_acc[2]), \
-                               float(tool_acc[3]))
-
-    def get_joints_acc(self, tool_acc, joints_vel):
-        """
-        Computes current tool velocity using jacobian
-        """
-        tool_vel = np.matrix([[tool_vel.x], \
-                              [tool_vel.y], \
-                              [tool_vel.z], \
-                              [tool_vel.gripper_hdg]])
-
-        jacobian_inv = self.compute_jacobian_inv()
-        jacobian_dot = self.compute_jacobian_dot()
-
-        if np.linalg.norm(tool_vel) < EPSILON:
-            return JointSpacePoint(0, 0, 0, 0)
-
-        joints_acc = jacobian_inv * (tool_acc - jacobian_dot * joints_vel)
-
-        return JointSpacePoint(float(joints_acc[0]), \
-                               float(joints_acc[1]), \
-                               float(joints_acc[2]), \
-                               float(joints_acc[3]))
-
     def get_path(self, start_pos, start_vel, target_pos, target_vel, delta_t):
         """
         Generates a time optimal trajectory for the whole arm
