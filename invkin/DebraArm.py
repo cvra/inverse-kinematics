@@ -232,8 +232,10 @@ class DebraArm(Scara):
                                 [joints_acc.theta2], \
                                 [joints_acc.z], \
                                 [joints_acc.theta3]])
+
         jacobian = self.compute_jacobian()
         jacobian_dot = self.compute_jacobian_dot()
+
         tool_acc = jacobian * joints_acc + jacobian_dot * joints_vel
 
         return RobotSpacePoint(float(tool_acc[0]), \
@@ -241,7 +243,7 @@ class DebraArm(Scara):
                                float(tool_acc[2]), \
                                float(tool_acc[3]))
 
-    def get_joints_acc(self, tool_vel, joints_vel):
+    def get_joints_acc(self, tool_acc, joints_vel):
         """
         Computes current tool velocity using jacobian
         """
@@ -249,20 +251,19 @@ class DebraArm(Scara):
                               [tool_vel.y], \
                               [tool_vel.z], \
                               [tool_vel.gripper_hdg]])
-        jacobian = self.compute_jacobian()
+
+        jacobian_inv = self.compute_jacobian_inv()
+        jacobian_dot = self.compute_jacobian_dot()
 
         if np.linalg.norm(tool_vel) < EPSILON:
             return JointSpacePoint(0, 0, 0, 0)
 
-        if abs(np.linalg.det(jacobian)) < EPSILON:
-            raise ValueError('Singularity')
+        joints_acc = jacobian_inv * (tool_acc - jacobian_dot * joints_vel)
 
-        joints_vel = np.linalg.solve(jacobian, tool_vel)
-
-        return JointSpacePoint(float(joints_vel[0]), \
-                               float(joints_vel[1]), \
-                               float(joints_vel[2]), \
-                               float(joints_vel[3]))
+        return JointSpacePoint(float(joints_acc[0]), \
+                               float(joints_acc[1]), \
+                               float(joints_acc[2]), \
+                               float(joints_acc[3]))
 
     def get_path(self, start_pos, start_vel, target_pos, target_vel, delta_t):
         """
