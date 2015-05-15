@@ -1,3 +1,4 @@
+from __future__ import division
 from pickit.Datatypes import *
 from pickit.Joint import Joint
 from pickit.Scara import Scara

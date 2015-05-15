@@ -1,3 +1,4 @@
+from __future__ import division
 from pickit.Datatypes import *
 from pickit import Scara
 from math import pi, sqrt, cos, sin

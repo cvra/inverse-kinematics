@@ -1,3 +1,4 @@
+from __future__ import division
 from pickit.Datatypes import *
 import numpy as np
 
