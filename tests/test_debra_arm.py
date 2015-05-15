@@ -1,5 +1,5 @@
-from invkin.Datatypes import *
-from invkin import DebraArm
+from pickit.Datatypes import *
+from pickit import DebraArm
 from math import pi, sqrt, cos, sin
 import numpy as np
 import random, time

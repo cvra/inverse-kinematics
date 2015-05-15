@@ -1,5 +1,5 @@
-from invkin.Datatypes import *
-from invkin import Joint
+from pickit.Datatypes import *
+from pickit import Joint
 import unittest
 
 class JointTestCase(unittest.TestCase):

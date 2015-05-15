@@ -1,6 +1,6 @@
-from invkin.Datatypes import *
-from invkin.Joint import Joint
-from invkin.Scara import Scara
+from pickit.Datatypes import *
+from pickit.Joint import Joint
+from pickit.Scara import Scara
 import numpy as np
 
 class DebraArm(Scara):

@@ -1,5 +1,5 @@
-from invkin.Datatypes import *
-from invkin.Joint import Joint
+from pickit.Datatypes import *
+from pickit.Joint import Joint
 import numpy as np
 
 class Scara(object):

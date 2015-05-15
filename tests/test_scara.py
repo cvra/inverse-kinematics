@@ -1,5 +1,5 @@
-from invkin.Datatypes import *
-from invkin import Scara
+from pickit.Datatypes import *
+from pickit import Scara
 from math import pi, sqrt, cos, sin
 import numpy as np
 import unittest

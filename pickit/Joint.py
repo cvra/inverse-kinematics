@@ -1,4 +1,4 @@
-from invkin.Datatypes import *
+from pickit.Datatypes import *
 import numpy as np
 
 class Joint(object):

@@ -1,7 +1,7 @@
 import pygame, sys, time
 import matplotlib.pyplot as plt
-from invkin.Datatypes import *
-from invkin import DebraArm
+from pickit.Datatypes import *
+from pickit import DebraArm
 from math import cos, sin, pi
 
 # Robot settings

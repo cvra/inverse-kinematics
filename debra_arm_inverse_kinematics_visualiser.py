@@ -1,13 +1,15 @@
 import pygame, sys
-from invkin.Scara import *
-from invkin.Datatypes import *
-from math import cos, sin
+from pickit.Datatypes import *
+from pickit import DebraArm
+from math import cos, sin, pi
 
 PX_PER_METER = 100
-L1 = 1.0
-L2 = 0.5
-WIDTH = int(2 * (L1 + L2) * PX_PER_METER)
-HEIGHT = int(2 * (L1 + L2) * PX_PER_METER)
+L1 = 1.5
+L2 = 1.0
+L3 = 0.2
+GRIPPER_HEADING = 0
+WIDTH = int(2 * (L1 + L2 + L3) * PX_PER_METER)
+HEIGHT = int(2 * (L1 + L2 + L3) * PX_PER_METER)
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -26,13 +28,13 @@ def main():
     # Initial robot state
     origin_x, origin_y = 0.0, 0.0
 
-    scara = Scara(l1=L1, l2=L2, flip_x=-1, flip_elbow=-1)
-    tool = scara.get_tool()
-    joints = scara.get_joints()
+    arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=-1, flip_elbow=1)
+    tool = arm.get_tool()
+    joints = arm.get_joints()
 
     # Draw robot
-    p0, p1, p2 = scara.get_detailed_pos()
-    draw_scara(p0, p1, p2)
+    origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
+    draw_arm(origin, p1, p2, p3)
 
     pygame.display.update()
 
@@ -55,25 +57,26 @@ def main():
             print("cursor: x: ", x, ", y: ", y)
 
             try:
-                tool = RobotSpacePoint(x, y, 0, 0)
-                joints = scara.inverse_kinematics(tool)
+                tool = RobotSpacePoint(x, y, z, GRIPPER_HEADING)
+                joints = arm.inverse_kinematics(tool)
             except ValueError:
                 pass
 
-            print("scara: ", "x:", scara.tool.x, "y:", scara.tool.y, \
-                  "th1:", scara.joints.theta1, "th2:", scara.joints.theta2)
+            print("arm: ", "x:", arm.tool.x, "y:", arm.tool.y, \
+                  "th1:", arm.joints.theta1, "th2:", arm.joints.theta2)
 
             # Draw robot
-            origin, p1, p2 = scara.get_detailed_pos()
-            draw_scara(origin, p1, p2)
+            origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
+            draw_arm(origin, p1, p2, p3)
 
             pygame.display.update()
 
-def draw_scara(p0, p1, p2):
-    "draw scara state"
+def draw_arm(p0, p1, p2, p3):
+    "draw arm state"
 
     draw_line(p0.x, p0.y, p1.x, p1.y)
     draw_line(p1.x, p1.y, p2.x, p2.y)
+    draw_line(p2.x, p2.y, p3.x, p3.y)
 
 def draw_line(pos1_x, pos1_y, pos2_x, pos2_y):
     "draw line from pos1 to pos2"
