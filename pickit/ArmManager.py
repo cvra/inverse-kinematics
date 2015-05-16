@@ -15,7 +15,7 @@ class ArmManager(object):
         if self.workspace_within_constraints(workspace):
             self.workspace = workspace
         else:
-            raise ValueError('Workspace out of constraints')
+            self.workspace = self.clip_workspace_to_constraints(workspace)
 
         self.dt = time_resolution
 
@@ -32,3 +32,16 @@ class ArmManager(object):
             return 0
         else:
             return 1
+
+    def clip_workspace_to_constraints(self, workspace):
+        """
+        Clips the workspace to make it fit within constraints of the arm
+        """
+        x_min = max(workspace.x_min, self.arm.x_axis.constraints.pos_min)
+        x_max = min(workspace.x_max, self.arm.x_axis.constraints.pos_max)
+        y_min = max(workspace.y_min, self.arm.y_axis.constraints.pos_min)
+        y_max = min(workspace.y_max, self.arm.y_axis.constraints.pos_max)
+        z_min = max(workspace.z_min, self.arm.z_axis.constraints.pos_min)
+        z_max = min(workspace.z_max, self.arm.z_axis.constraints.pos_max)
+
+        return Workspace(x_min, x_max, y_min, y_max, z_min, z_max)
