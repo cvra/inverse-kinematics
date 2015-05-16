@@ -159,7 +159,8 @@ class DebraArm(Scara):
         """
         if abs(self.joints.theta2) < EPSILON \
            or abs(self.joints.theta2 - pi) < EPSILON:
-            raise ValueError('Singularity')
+            # raise ValueError('Singularity')
+            return self.jacobian_inv
 
         sin_th1_th2 = np.sin(self.joints.theta1 + self.joints.theta2)
         cos_th1_th2 = np.cos(self.joints.theta1 + self.joints.theta2)

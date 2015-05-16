@@ -2,6 +2,24 @@ from __future__ import division
 from pickit.Datatypes import *
 from pickit.Scara import Scara
 from pickit.DebraArm import DebraArm
+import numpy as np
+
+def merge_trajectories(traj_a, traj_b):
+    """
+    Merge two trajectories into one
+    """
+    traj = []
+
+    for t in traj_a:
+        traj.append(t)
+
+    t1, p1, v1, a1 = t
+
+    for t in traj_b:
+        time, pos, vel, acc = t
+        traj.append((time + t1, pos, vel, acc))
+
+    return traj
 
 class ArmManager(object):
     "Wrapper for arm classes for easier use"
@@ -46,6 +64,20 @@ class ArmManager(object):
 
         return Workspace(x_min, x_max, y_min, y_max, z_min, z_max)
 
+    def position_within_workspace(self, position, workspace):
+        """
+        Checks that the position is in the workspace
+        """
+        if position.x < workspace.x_min \
+            or position.x > workspace.x_max \
+            or position.y < workspace.y_min \
+            or position.y > workspace.y_max \
+            or position.z < workspace.z_min \
+            or position.z > workspace.z_max:
+            return 0
+        else:
+            return 1
+
     def goto_position(self, start_pos, start_vel, target_pos, target_vel,
                       shape='line'):
         """
@@ -66,3 +98,49 @@ class ArmManager(object):
                                      self.dt)
         else:
             raise ValueError('Unknown shape of trajectory requested')
+
+    def goto_workspace(self, start_pos, start_vel, target_pos, target_vel,
+                       shape, new_workspace, new_elbow_orientation):
+        """
+        Sets a new workspace for the robot and define the elbow orientation in
+        that workspace.
+        Outputs a trajectory (adjustment) to go to the new workspace
+        """
+        # Check that new position is within workspace
+        if not self.position_within_workspace(target_pos, new_workspace):
+            raise ValueError('Target position not within new workspace boundaries')
+
+        # Register new workspace, if too big, clip it to fit constraints
+        if self.workspace_within_constraints(new_workspace):
+            self.workspace = new_workspace
+        else:
+            self.workspace = self.clip_workspace_to_constraints(new_workspace)
+
+        # Compute sequence to move from old workspace to the new position
+        # in the new workspace defined
+        if np.sign(new_elbow_orientation) == self.arm.flip_elbow:
+            return self.goto_position(start_pos, start_vel, target_pos, target_vel, shape)
+
+        # Else, we need to flip the elbow!
+        start_joints = self.arm.inverse_kinematics(start_pos)
+        inter_joints = start_joints._replace(theta2=0.0)
+        inter_pos = self.arm.forward_kinematics(inter_joints)
+        inter_vel = RobotSpacePoint(0.0, 0.0, 0.0, 0.0)
+
+        # Go to intermediary point (singularity)
+        qa1, qa2, qa3, qa4 = \
+            self.goto_position(start_pos, start_vel, inter_pos, inter_vel, 'curve')
+
+        self.arm.flip_elbow *= -1
+
+        # # Go to target
+        qb1, qb2, qb3, qb4 = \
+            self.goto_position(inter_pos, inter_vel, target_pos, target_vel, shape)
+
+        q1 = merge_trajectories(qa1, qb1)
+        q2 = merge_trajectories(qa2, qb2)
+        q3 = merge_trajectories(qa3, qb3)
+        q4 = merge_trajectories(qa4, qb4)
+
+        # Return trajectory to execute for adjustment
+        return q1, q2, q3, q4
