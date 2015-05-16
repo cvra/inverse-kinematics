@@ -45,3 +45,24 @@ class ArmManager(object):
         z_max = min(workspace.z_max, self.arm.z_axis.constraints.pos_max)
 
         return Workspace(x_min, x_max, y_min, y_max, z_min, z_max)
+
+    def goto_position(self, start_pos, start_vel, target_pos, target_vel,
+                      shape='line'):
+        """
+        Return the trajectory to move from start to target
+        """
+        if shape == 'line' or shape == 'straight' or shape == 'xyz':
+            return self.arm.get_path_xyz(start_pos,
+                                         start_vel,
+                                         target_pos,
+                                         target_vel,
+                                         self.dt,
+                                         'joint')
+        elif shape == 'curve' or shape == 'joint':
+            return self.arm.get_path(start_pos,
+                                     start_vel,
+                                     target_pos,
+                                     target_vel,
+                                     self.dt)
+        else:
+            raise ValueError('Unknown shape of trajectory requested')

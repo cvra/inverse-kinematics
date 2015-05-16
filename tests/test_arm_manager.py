@@ -134,3 +134,49 @@ class ArmManagerClipWorkspaceTestCase(unittest.TestCase):
         self.assertAlmostEqual(new_ws.y_max, ws.y_max)
         self.assertAlmostEqual(new_ws.z_min, ws.z_min)
         self.assertNotEqual(new_ws.z_max, ws.z_max)
+
+class ArmManagerGoToPosTestCase(unittest.TestCase):
+    def setUp(self):
+        self.arm = DebraArm.DebraArm(l1=l1, l2=l2)
+        self.ws = Workspace(0.2,2.0, -1.0,1.0, 0.0,0.2)
+        self.arm_mng = ArmManager.ArmManager(self.arm, self.ws, DELTA_T)
+
+        self.start_pos = RobotSpacePoint(1.0, -0.5, 0.0, 0.0)
+        self.start_vel = RobotSpacePoint(0.0, 0.0, 0.0, 0.0)
+        self.target_pos = RobotSpacePoint(1.0, 0.5, 0.0, 0.0)
+        self.target_vel = RobotSpacePoint(0.0, 0.0, 0.0, 0.0)
+
+    def test_goto_path_robot_space(self):
+        q1, q2, q3, q4 = self.arm_mng.goto_position(self.start_pos,
+                                                    self.start_vel,
+                                                    self.target_pos,
+                                                    self.target_vel,
+                                                    'line')
+        t1, t2, t3, t4 = self.arm.get_path_xyz(self.start_pos,
+                                               self.start_vel,
+                                               self.target_pos,
+                                               self.target_vel,
+                                               DELTA_T,
+                                               'joint')
+
+        self.assertAlmostEqual(t1, q1)
+        self.assertAlmostEqual(t2, q2)
+        self.assertAlmostEqual(t3, q3)
+        self.assertAlmostEqual(t4, q4)
+
+    def test_goto_path_joint_space(self):
+        q1, q2, q3, q4 = self.arm_mng.goto_position(self.start_pos,
+                                                    self.start_vel,
+                                                    self.target_pos,
+                                                    self.target_vel,
+                                                    'curve')
+        t1, t2, t3, t4 = self.arm.get_path(self.start_pos,
+                                           self.start_vel,
+                                           self.target_pos,
+                                           self.target_vel,
+                                           DELTA_T)
+
+        self.assertAlmostEqual(t1, q1)
+        self.assertAlmostEqual(t2, q2)
+        self.assertAlmostEqual(t3, q3)
+        self.assertAlmostEqual(t4, q4)
