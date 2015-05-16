@@ -5,7 +5,7 @@ from pickit.Scara import Scara
 import numpy as np
 
 class DebraArm(Scara):
-    "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
+    "Kinematics and trajectory generation of an arm on Debra (3dof + hand)"
 
     def __init__(self, l1=1.0, l2=1.0,
                  theta1_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -1,1),

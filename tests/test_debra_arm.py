@@ -10,7 +10,7 @@ l1 = 1.0
 l2 = 0.5
 DELTA_T = 0.01
 
-class DebraArmTestCase(unittest.TestCase):
+class DebraArmForwardKinematicsTestCase(unittest.TestCase):
     def test_fwdkin(self):
         """
         Checks that forward kinematics works
@@ -38,34 +38,6 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(tool.y, -l1)
         self.assertAlmostEqual(tool.z, 0.2)
         self.assertAlmostEqual(tool.gripper_hdg, 0.0)
-
-    def test_invkin(self):
-        """
-        Checks that inverse kinematics works
-        """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-
-        x = l2
-        y = - l1
-        z = 0.1
-        grp_hdg = 0
-        tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.inverse_kinematics(tool)
-        self.assertAlmostEqual(joints.theta1, -pi / 2)
-        self.assertAlmostEqual(joints.theta2, pi / 2)
-        self.assertAlmostEqual(joints.z, 0.1)
-        self.assertAlmostEqual(joints.theta3, pi / 2)
-
-        x = 0
-        y = l1 + l2
-        z = 0.2
-        grp_hdg = 0
-        tool = RobotSpacePoint(x, y, z, grp_hdg)
-        joints = arm.inverse_kinematics(tool)
-        self.assertAlmostEqual(joints.theta1, pi / 2)
-        self.assertAlmostEqual(joints.theta2, 0.0)
-        self.assertAlmostEqual(joints.z, 0.2)
-        self.assertAlmostEqual(joints.theta3, 0)
 
     def test_fwdkin_origin(self):
         """
@@ -95,6 +67,35 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(tool.z, 0.2 + 1)
         self.assertAlmostEqual(tool.gripper_hdg, 0.0)
 
+class DebraArmInverseKinematicsTestCase(unittest.TestCase):
+    def test_invkin(self):
+        """
+        Checks that inverse kinematics works
+        """
+        arm = DebraArm.DebraArm(l1=l1, l2=l2)
+
+        x = l2
+        y = - l1
+        z = 0.1
+        grp_hdg = 0
+        tool = RobotSpacePoint(x, y, z, grp_hdg)
+        joints = arm.inverse_kinematics(tool)
+        self.assertAlmostEqual(joints.theta1, -pi / 2)
+        self.assertAlmostEqual(joints.theta2, pi / 2)
+        self.assertAlmostEqual(joints.z, 0.1)
+        self.assertAlmostEqual(joints.theta3, pi / 2)
+
+        x = 0
+        y = l1 + l2
+        z = 0.2
+        grp_hdg = 0
+        tool = RobotSpacePoint(x, y, z, grp_hdg)
+        joints = arm.inverse_kinematics(tool)
+        self.assertAlmostEqual(joints.theta1, pi / 2)
+        self.assertAlmostEqual(joints.theta2, 0.0)
+        self.assertAlmostEqual(joints.z, 0.2)
+        self.assertAlmostEqual(joints.theta3, 0)
+
     def test_invkin_origin(self):
         """
         Checks that inverse kinematics works with origin not at 0
@@ -122,27 +123,15 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(joints.z, 0.2)
         self.assertAlmostEqual(joints.theta3, 0)
 
-    def test_target_unreachable(self):
-        """
-        Checks that an out of range target is detected as unreachable
-        """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-
-        tool = RobotSpacePoint(1+l1+l2, 0, 0, 0)
-        with self.assertRaises(ValueError):
-            joints = arm.inverse_kinematics(tool)
-
-        tool = RobotSpacePoint(0, 0, 0, 0)
-        with self.assertRaises(ValueError):
-            joints = arm.inverse_kinematics(tool)
+class DebraArmJacobianTestCase(unittest.TestCase):
+    def setUp(self):
+        self.arm = DebraArm.DebraArm(l1=l1, l2=l2)
 
     def test_jacobian(self):
         """
         Checks that jacobian matrix is correct
         """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-
-        jacobian = arm.compute_jacobian()
+        jacobian = self.arm.compute_jacobian()
         self.assertAlmostEqual(jacobian[0,0], 0)
         self.assertAlmostEqual(jacobian[0,1], 0)
         self.assertAlmostEqual(jacobian[1,0], l1 + l2)
@@ -157,8 +146,8 @@ class DebraArmTestCase(unittest.TestCase):
         self.assertAlmostEqual(jacobian[3,3], -1)
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
-        tool = arm.forward_kinematics(joints)
-        jacobian = arm.compute_jacobian()
+        tool = self.arm.forward_kinematics(joints)
+        jacobian = self.arm.compute_jacobian()
         self.assertAlmostEqual(jacobian[0,0], - l2)
         self.assertAlmostEqual(jacobian[0,1], - l2)
         self.assertAlmostEqual(jacobian[1,0], l1)
@@ -176,19 +165,17 @@ class DebraArmTestCase(unittest.TestCase):
         """
         Checks that tool velocity is correctly estimated
         """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-
         joints_vel = JointSpacePoint(0, 0, 0, 0)
-        jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel)
+        jacobian = self.arm.compute_jacobian()
+        tool_vel = self.arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, 0)
         self.assertAlmostEqual(tool_vel.y, 0)
         self.assertAlmostEqual(tool_vel.z, 0)
         self.assertAlmostEqual(tool_vel.gripper_hdg, 0)
 
         joints_vel = JointSpacePoint(1, 1, 1, 1)
-        jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel)
+        jacobian = self.arm.compute_jacobian()
+        tool_vel = self.arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, 0)
         self.assertAlmostEqual(tool_vel.y, (l1 + l2) * joints_vel.theta1 \
                                             + l2 * joints_vel.theta2)
@@ -198,10 +185,10 @@ class DebraArmTestCase(unittest.TestCase):
                                                        + joints_vel.theta3))
 
         joints = JointSpacePoint(0, pi/2, 0, 0)
-        tool = arm.forward_kinematics(joints)
+        tool = self.arm.forward_kinematics(joints)
         joints_vel = JointSpacePoint(1, 1, 1, 1)
-        jacobian = arm.compute_jacobian()
-        tool_vel = arm.get_tool_vel(joints_vel)
+        jacobian = self.arm.compute_jacobian()
+        tool_vel = self.arm.get_tool_vel(joints_vel)
         self.assertAlmostEqual(tool_vel.x, - l2 * (joints_vel.theta1 + joints_vel.theta2))
         self.assertAlmostEqual(tool_vel.y, l1 * joints_vel.theta1)
         self.assertAlmostEqual(tool_vel.z, 1)
@@ -213,40 +200,53 @@ class DebraArmTestCase(unittest.TestCase):
         """
         Checks that joints velocity is correctly estimated
         """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-
         joints = JointSpacePoint(0, pi/2, 0, 0)
-        tool = arm.forward_kinematics(joints)
+        tool = self.arm.forward_kinematics(joints)
         tool_vel = RobotSpacePoint(0, 0, 0, 0)
-        jacobian_inv = arm.compute_jacobian_inv()
-        joints_vel = arm.get_joints_vel(tool_vel)
+        jacobian_inv = self.arm.compute_jacobian_inv()
+        joints_vel = self.arm.get_joints_vel(tool_vel)
         self.assertAlmostEqual(joints_vel.theta1, 0)
         self.assertAlmostEqual(joints_vel.theta2, 0)
         self.assertAlmostEqual(joints_vel.theta3, 0)
         self.assertAlmostEqual(joints_vel.z, 0)
 
         joints = JointSpacePoint(0, 0, 0, 0)
-        tool = arm.forward_kinematics(joints)
+        tool = self.arm.forward_kinematics(joints)
         tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
-            jacobian_inv = arm.compute_jacobian_inv()
-            joints_vel = arm.get_joints_vel(tool_vel)
+            jacobian_inv = self.arm.compute_jacobian_inv()
+            joints_vel = self.arm.get_joints_vel(tool_vel)
 
         joints = JointSpacePoint(0, pi, 0, 0)
-        tool = arm.forward_kinematics(joints)
+        tool = self.arm.forward_kinematics(joints)
         tool_vel = RobotSpacePoint(1, 1, 1, 1)
         with self.assertRaises(ValueError):
-            jacobian_inv = arm.compute_jacobian_inv()
-            joints_vel = arm.get_joints_vel(tool_vel)
+            jacobian_inv = self.arm.compute_jacobian_inv()
+            joints_vel = self.arm.get_joints_vel(tool_vel)
+
+class DebraArmTrajectoryGenerationTestCase(unittest.TestCase):
+    def setUp(self):
+        self.arm = DebraArm.DebraArm(l1=l1, l2=l2)
+        self.arm.inverse_kinematics(RobotSpacePoint(0.99*(l1+l2), 0, 0, 0))
+
+    def test_target_unreachable(self):
+        """
+        Checks that an out of range target is detected as unreachable
+        """
+        tool = RobotSpacePoint(1+l1+l2, 0, 0, 0)
+        with self.assertRaises(ValueError):
+            joints = self.arm.inverse_kinematics(tool)
+
+        tool = RobotSpacePoint(0, 0, 0, 0)
+        with self.assertRaises(ValueError):
+            joints = self.arm.inverse_kinematics(tool)
 
     def test_path_xyz(self):
         """
         Checks that path generation in xyz outputs a trajectory that satisfies
         initial and final states
         """
-        arm = DebraArm.DebraArm(l1=l1, l2=l2)
-        arm.inverse_kinematics(RobotSpacePoint(0.99*(l1+l2), 0, 0, 0))
-        tool = arm.get_tool()
+        tool = self.arm.get_tool()
 
         start_vel = RobotSpacePoint(0,0,0,0)
         target_vel = RobotSpacePoint(0,0,0,0)
@@ -265,21 +265,21 @@ class DebraArmTestCase(unittest.TestCase):
 
             x = r * np.cos(th_prev + dth)
             y = r * np.sin(th_prev + dth)
-            z = random.uniform(arm.z_axis.constraints.pos_min,
-                               arm.z_axis.constraints.pos_max)
-            grp = random.uniform(arm.gripper_axis.constraints.pos_min,
-                                 arm.gripper_axis.constraints.pos_max)
+            z = random.uniform(self.arm.z_axis.constraints.pos_min,
+                               self.arm.z_axis.constraints.pos_max)
+            grp = random.uniform(self.arm.gripper_axis.constraints.pos_min,
+                                 self.arm.gripper_axis.constraints.pos_max)
 
             tool = RobotSpacePoint(x, y, z, grp)
-            print('#', i, 'moving from:', (tool_prev.x, tool_prev.y), 'to:', (x, y))
+            # print('#', i, 'moving from:', (tool_prev.x, tool_prev.y), 'to:', (x, y))
 
             starting_time = time.time()
-            px, py, pz, pgrp = arm.get_path_xyz(tool_prev,
-                                                RobotSpacePoint(0,0,0,0),
-                                                tool,
-                                                RobotSpacePoint(0,0,0,0),
-                                                DELTA_T,
-                                                'robot')
+            px, py, pz, pgrp = self.arm.get_path_xyz(tool_prev,
+                                                     RobotSpacePoint(0,0,0,0),
+                                                     tool,
+                                                     RobotSpacePoint(0,0,0,0),
+                                                     DELTA_T,
+                                                     'robot')
             ending_time = time.time()
             timing.append(ending_time - starting_time)
 
@@ -294,7 +294,7 @@ class DebraArmTestCase(unittest.TestCase):
             self.assertAlmostEqual(pz[-1][1], tool.z, places=3)
             self.assertAlmostEqual(pgrp[-1][1], tool.gripper_hdg, places=3)
 
-        print('Computed ', len(timing), ' trajectories successfully')
+        print('Computed ', len(timing), ' trajectories in robot space successfully')
         print('Average computation time:', int(np.mean(timing) * 1e6), 'us',
               '+/-', int(np.std(timing) * 1e6), 'us')
 
