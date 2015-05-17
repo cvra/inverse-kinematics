@@ -36,6 +36,8 @@ class ArmManager(object):
 
         self.workspace = self.workspace_containing_position(self.arm.get_tool())
 
+        self.tool = arm.get_tool()
+
         self.dt = time_resolution
 
     def workspace_containing_position(self, position):
@@ -95,13 +97,39 @@ class ArmManager(object):
         else:
             return 1
 
+    def workspace_center(self, workspace):
+        """
+        Return a point at the center of the workspace
+        """
+        return Vector3D((workspace.x_min + workspace.x_max) / 2,
+                        (workspace.y_min + workspace.y_max) / 2,
+                        (workspace.z_min + workspace.z_max) / 2)
+
     def goto(self, start_pos, start_vel, target_pos, target_vel, shape='line'):
         """
         Generic wrapper to move the arm
         """
         new_ws = self.workspace_containing_position(target_pos)
 
-        return self.goto_workspace(start_pos, start_vel, target_pos, target_vel, shape, new_ws)
+        q1 = []
+        q2 = []
+        q3 = []
+        q4 = []
+
+        try:
+            q1, q2, q3, q4 = self.goto_workspace(start_pos, start_vel, target_pos, target_vel, shape, new_ws)
+            # Try to go in desired shape
+        except ValueError as e:
+            print('Can\'t use desired shape, forcing joint space trajectory:', e)
+            self.tool = start_pos
+            self.arm.inverse_kinematics(self.tool)
+            q1, q2, q3, q4 =  self.goto_workspace(start_pos, start_vel, target_pos, target_vel, 'curve', new_ws)
+            # If can't work it out, force joint space trajectory
+
+        self.tool = target_pos
+        self.arm.inverse_kinematics(self.tool)
+
+        return q1, q2, q3, q4
 
     def goto_workspace(self, start_pos, start_vel, target_pos, target_vel,
                        shape, new_workspace):
