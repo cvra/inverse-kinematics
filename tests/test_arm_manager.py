@@ -235,3 +235,61 @@ class ArmManagerGoToPosTestCase(unittest.TestCase):
         self.assertAlmostEqual(t2, q2)
         self.assertAlmostEqual(t3, q3)
         self.assertAlmostEqual(t4, q4)
+
+class ArmManagerETATestCase(unittest.TestCase):
+    def setUp(self):
+        self.arm = DebraArm.DebraArm(l1=l1, l2=l2)
+        self.ws = Workspace(0.2,2.0, -1.0,1.0, 0.0,0.2, 1)
+        ws_front = self.ws
+        ws_side = self.ws
+        ws_back = self.ws
+        self.arm_mng = ArmManager.ArmManager(self.arm, ws_front, ws_side, ws_back, DELTA_T)
+
+        self.start_pos = RobotSpacePoint(1.0, -0.5, 0.0, 0.0)
+        self.start_vel = RobotSpacePoint(0.0, 0.0, 0.0, 0.0)
+        self.target_pos = RobotSpacePoint(1.0, 0.5, 0.0, 0.0)
+        self.target_vel = RobotSpacePoint(0.0, 0.0, 0.0, 0.0)
+
+        self.start_joints_pos = self.arm.inverse_kinematics(self.start_pos)
+        self.arm.compute_jacobian_inv()
+        self.start_joints_vel = self.arm.get_joints_vel(self.start_vel)
+
+        self.target_joints_pos = self.arm.inverse_kinematics(self.target_pos)
+        self.arm.compute_jacobian_inv()
+        self.target_joints_vel = self.arm.get_joints_vel(self.target_vel)
+
+    def test_curve_traj(self):
+        eta_curve = self.arm.synchronisation_time(self.start_joints_pos,
+                                                  self.start_joints_vel,
+                                                  self.target_joints_pos,
+                                                  self.target_joints_vel)
+
+        eta = self.arm_mng.estimated_time_of_arrival(self.start_pos,
+                                                     self.start_vel,
+                                                     self.target_pos,
+                                                     self.target_vel,
+                                                     'curve')
+
+        self.assertAlmostEqual(eta, eta_curve)
+
+        eta = self.arm_mng.estimated_time_of_arrival(self.start_pos,
+                                                     self.start_vel,
+                                                     self.target_pos,
+                                                     self.target_vel,
+                                                     'joint')
+        self.assertAlmostEqual(eta, eta_curve)
+
+
+    def test_line_traj(self):
+        eta = self.arm_mng.estimated_time_of_arrival(self.start_pos,
+                                                     self.start_vel,
+                                                     self.target_pos,
+                                                     self.target_vel,
+                                                     'line')
+
+        eta_line = self.arm.sync_time_xyz(self.start_pos,
+                                          self.start_vel,
+                                          self.target_pos,
+                                          self.target_vel)
+
+        self.assertAlmostEqual(eta, eta_line)

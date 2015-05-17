@@ -165,3 +165,24 @@ class ArmManager(object):
                                      self.dt)
         else:
             raise ValueError('Unknown shape of trajectory requested')
+
+    def estimated_time_of_arrival(self, start_pos, start_vel, target_pos, target_vel,
+                                  shape='line'):
+        """
+        Returns time it takes to move from start to target_vel
+        """
+        if shape == 'curve' or shape == 'joint':
+            start_joints_pos = self.arm.inverse_kinematics(start_pos)
+            self.arm.compute_jacobian_inv()
+            start_joints_vel = self.arm.get_joints_vel(start_vel)
+
+            target_joints_pos = self.arm.inverse_kinematics(target_pos)
+            self.arm.compute_jacobian_inv()
+            target_joints_vel = self.arm.get_joints_vel(target_vel)
+
+            return self.arm.synchronisation_time(start_joints_pos,
+                                                 start_joints_vel,
+                                                 target_joints_pos,
+                                                 target_joints_vel)
+        else:
+            return self.arm.sync_time_xyz(start_pos, start_vel, target_pos, target_vel)
