@@ -135,7 +135,7 @@ class ArmManager(object):
 
         # # Go to target
         qb1, qb2, qb3, qb4 = \
-            self.goto_position(inter_pos, inter_vel, target_pos, target_vel, shape)
+            self.goto_position(inter_pos, inter_vel, target_pos, target_vel, 'curve')
 
         q1 = merge_trajectories(qa1, qb1)
         q2 = merge_trajectories(qa2, qb2)
