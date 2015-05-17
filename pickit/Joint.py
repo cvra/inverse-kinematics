@@ -145,13 +145,21 @@ class Joint(object):
         a2 = float(- 0.5 * sign_traj * constraint.acc_max)
 
         time_3, traj_pos_3, traj_vel_3, traj_acc_3 = \
-            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync+delta_t, delta_t)
+            self.polynomial_piece_profile([a2, a1, a0], t2, tf_sync, delta_t)
+
+        time_4 = [tf_sync]
+        traj_pos_4 = [pos_f]
+        traj_vel_4 = [vel_f]
+        traj_acc_4 = [0.0]
 
         # Combine piecewise trajectory
-        time = np.concatenate((time_1, time_2, time_3), axis=0)
-        traj_pos = np.concatenate((traj_pos_1, traj_pos_2, traj_pos_3), axis=0)
-        traj_vel = np.concatenate((traj_vel_1, traj_vel_2, traj_vel_3), axis=0)
-        traj_acc = np.concatenate((traj_acc_1, traj_acc_2, traj_acc_3), axis=0)
+        time = np.concatenate((time_1, time_2, time_3, time_4), axis=0)
+        traj_pos = \
+            np.concatenate((traj_pos_1, traj_pos_2, traj_pos_3, traj_pos_4), axis=0)
+        traj_vel = \
+            np.concatenate((traj_vel_1, traj_vel_2, traj_vel_3, traj_vel_4), axis=0)
+        traj_acc = \
+            np.concatenate((traj_acc_1, traj_acc_2, traj_acc_3, traj_acc_4), axis=0)
 
         time = time.tolist()
         traj_pos = traj_pos.tolist()
