@@ -41,10 +41,12 @@ def main():
     arm = DebraArm.DebraArm(l1=L1, l2=L2, flip_x=1)
     arm.inverse_kinematics(RobotSpacePoint(0.99*(L1+L2), 0, 0, 0))
     start = arm.get_tool()
-    end = RobotSpacePoint(1.0, -0.5, 0.1, GRIPPER_HEADING)
+    end = RobotSpacePoint(0.0, -1.2, 0.1, GRIPPER_HEADING-pi/2)
 
-    ws = Workspace(abs(L1 - L2), abs(L1 + L2), -1.0, 1.0, 0.0, 0.2)
-    arm_manager = ArmManager.ArmManager(arm, ws, DELTA_T)
+    ws_front = Workspace(-1.0,1.0, abs(L1 - L2), abs(L1 + L2), 0.0,0.2, 1)
+    ws_side = Workspace(abs(L1 - L2), abs(L1 + L2), -1.0,1.0, 0.0,0.2, 1)
+    ws_back = Workspace(-1.0,1.0, -abs(L1 + L2), -abs(L1 - L2), 0.0,0.2, -1)
+    arm_manager = ArmManager.ArmManager(arm, ws_front, ws_side, ws_back, DELTA_T)
 
     # Draw robot
     origin, p1, p2, p3, z = arm.get_detailed_pos(L3)
@@ -52,11 +54,10 @@ def main():
 
     pygame.display.update()
 
-    new_ws = ws
     pth1, pth2, pz, pth3 = \
-        arm_manager.goto_workspace(start, RobotSpacePoint(0,0,0,0),
-                                   end, RobotSpacePoint(0,0,0,0),
-                                   'line', new_ws, -1)
+        arm_manager.goto(start, RobotSpacePoint(0,0,0,0),
+                         end, RobotSpacePoint(0,0,0,0),
+                         'line')
 
     graph_trajectory_joint(pth1, pth2, pth3)
     draw_trajectory(arm, pth1, pth2, pz, pth3, DELTA_T)

@@ -95,26 +95,13 @@ class ArmManager(object):
         else:
             return 1
 
-    def goto_position(self, start_pos, start_vel, target_pos, target_vel,
-                      shape='line'):
+    def goto(self, start_pos, start_vel, target_pos, target_vel, shape='line'):
         """
-        Return the trajectory to move from start to target
+        Generic wrapper to move the arm
         """
-        if shape == 'line' or shape == 'straight' or shape == 'xyz':
-            return self.arm.get_path_xyz(start_pos,
-                                         start_vel,
-                                         target_pos,
-                                         target_vel,
-                                         self.dt,
-                                         'joint')
-        elif shape == 'curve' or shape == 'joint':
-            return self.arm.get_path(start_pos,
-                                     start_vel,
-                                     target_pos,
-                                     target_vel,
-                                     self.dt)
-        else:
-            raise ValueError('Unknown shape of trajectory requested')
+        new_ws = self.workspace_containing_position(target_pos)
+
+        return self.goto_workspace(start_pos, start_vel, target_pos, target_vel, shape, new_ws)
 
     def goto_workspace(self, start_pos, start_vel, target_pos, target_vel,
                        shape, new_workspace):
@@ -157,3 +144,24 @@ class ArmManager(object):
 
         # Return trajectory to execute for adjustment
         return q1, q2, q3, q4
+
+    def goto_position(self, start_pos, start_vel, target_pos, target_vel,
+                      shape='line'):
+        """
+        Return the trajectory to move from start to target
+        """
+        if shape == 'line' or shape == 'straight' or shape == 'xyz':
+            return self.arm.get_path_xyz(start_pos,
+                                         start_vel,
+                                         target_pos,
+                                         target_vel,
+                                         self.dt,
+                                         'joint')
+        elif shape == 'curve' or shape == 'joint':
+            return self.arm.get_path(start_pos,
+                                     start_vel,
+                                     target_pos,
+                                     target_vel,
+                                     self.dt)
+        else:
+            raise ValueError('Unknown shape of trajectory requested')
