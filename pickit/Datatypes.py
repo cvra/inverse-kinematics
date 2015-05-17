@@ -27,6 +27,7 @@ JointMinMaxConstraint = namedtuple('JointMinMaxConstraint', ['pos_min', 'pos_max
                                                              'acc_min', 'acc_max'])
 Workspace = namedtuple('Workspace', ['x_min', 'x_max',
                                      'y_min', 'y_max',
-                                     'z_min', 'z_max'])
+                                     'z_min', 'z_max',
+                                     'elbow_orientation'])
 
 TimeToDestination = namedtuple('TimeToDestination', ['t1', 't2', 'tf'])

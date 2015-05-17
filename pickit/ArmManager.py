@@ -24,18 +24,34 @@ def merge_trajectories(traj_a, traj_b):
 class ArmManager(object):
     "Wrapper for arm classes for easier use"
 
-    def __init__(self, arm, workspace, time_resolution):
+    def __init__(self, arm, ws_front, ws_side, ws_back, time_resolution):
         if arm.__class__.__name__ == 'DebraArm':
             self.arm = arm
         else:
             raise ValueError('Unhandled arm manipulator class')
 
-        if self.workspace_within_constraints(workspace):
-            self.workspace = workspace
-        else:
-            self.workspace = self.clip_workspace_to_constraints(workspace)
+        self.ws_front = self.clip_workspace_to_constraints(ws_front)
+        self.ws_side = self.clip_workspace_to_constraints(ws_side)
+        self.ws_back = self.clip_workspace_to_constraints(ws_back)
+
+        self.workspace = self.workspace_containing_position(self.arm.get_tool())
 
         self.dt = time_resolution
+
+    def workspace_containing_position(self, position):
+        """
+        Returns the workspace containing the position sent
+        """
+        if self.position_within_workspace(position, self.ws_side):
+            return self.ws_side
+        elif self.position_within_workspace(position, self.ws_front):
+            return self.ws_front
+        elif self.position_within_workspace(position, self.ws_back):
+            return self.ws_back
+        else:
+            self.arm.forward_kinematics(JointSpacePoint(0,0,0,0))
+            return self.ws_side
+            # Force to side workspace
 
     def workspace_within_constraints(self, workspace):
         """
@@ -62,7 +78,8 @@ class ArmManager(object):
         z_min = max(workspace.z_min, self.arm.z_axis.constraints.pos_min)
         z_max = min(workspace.z_max, self.arm.z_axis.constraints.pos_max)
 
-        return Workspace(x_min, x_max, y_min, y_max, z_min, z_max)
+        return Workspace(x_min, x_max, y_min, y_max, z_min, z_max,
+                         workspace.elbow_orientation)
 
     def position_within_workspace(self, position, workspace):
         """
@@ -100,7 +117,7 @@ class ArmManager(object):
             raise ValueError('Unknown shape of trajectory requested')
 
     def goto_workspace(self, start_pos, start_vel, target_pos, target_vel,
-                       shape, new_workspace, new_elbow_orientation):
+                       shape, new_workspace):
         """
         Sets a new workspace for the robot and define the elbow orientation in
         that workspace.
@@ -108,17 +125,13 @@ class ArmManager(object):
         """
         # Check that new position is within workspace
         if not self.position_within_workspace(target_pos, new_workspace):
-            raise ValueError('Target position not within new workspace boundaries')
+            raise ValueError('Target position not within new workspace boundaries, target may be out of defined workspaces')
 
-        # Register new workspace, if too big, clip it to fit constraints
-        if self.workspace_within_constraints(new_workspace):
-            self.workspace = new_workspace
-        else:
-            self.workspace = self.clip_workspace_to_constraints(new_workspace)
+        self.workspace = new_workspace
 
         # Compute sequence to move from old workspace to the new position
         # in the new workspace defined
-        if np.sign(new_elbow_orientation) == self.arm.flip_elbow:
+        if np.sign(new_workspace.elbow_orientation) == self.arm.flip_elbow:
             return self.goto_position(start_pos, start_vel, target_pos, target_vel, shape)
 
         # Else, we need to flip the elbow!
