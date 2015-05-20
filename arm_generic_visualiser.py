@@ -13,15 +13,12 @@ RANGE_MIN = abs(L1 - L2)
 RANGE_MAX = abs(L1 + L2)
 
 # Trajectory generation settings
-PLAN_ROBOT_SPACE = 1
-PLAN_JOINT_SPACE = 2
-MODE = PLAN_ROBOT_SPACE
 DELTA_T = 0.05
 
 # Display settings
 PX_PER_METER = 100
-WIDTH = int(2 * (L1 + L2 + L3) * PX_PER_METER)
-HEIGHT = int(2 * (L1 + L2 + L3) * PX_PER_METER)
+WIDTH = int(3 * (L1 + L2 + L3) * PX_PER_METER)
+HEIGHT = int(3 * (L1 + L2 + L3) * PX_PER_METER)
 
 pygame.init()
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -38,10 +35,10 @@ def main():
     "draw loop"
 
     # Initial robot state
-    origin = Vector3D(0.5, 0.0, 0.0)
+    origin = Vector3D(-0.5, 0.0, 0.0)
 
-    arm = DebraArm.DebraArm(l1=L1, l2=L2, origin=origin, flip_x=1)
-    arm.inverse_kinematics(RobotSpacePoint(0.99*(L1+L2), 0, 0, 0))
+    arm = DebraArm.DebraArm(l1=L1, l2=L2, origin=origin, flip_x=-1)
+    arm.inverse_kinematics(RobotSpacePoint(-0.99*(L1+L2)+origin.x, 0+origin.y, 0+origin.z, 0))
     tool = arm.get_tool()
     joints = arm.get_joints()
 
@@ -52,8 +49,8 @@ def main():
                          0.0 + origin.z,
                          0.2 + origin.z,
                          1)
-    ws_side = Workspace(abs(L1 - L2) + origin.x,
-                        abs(L1 + L2) + origin.x,
+    ws_side = Workspace(-abs(L1 + L2) + origin.x,
+                        -abs(L1 - L2) + origin.x,
                         -1.5 + origin.y,
                         1.5 + origin.y,
                         0.0 + origin.z,
