@@ -66,7 +66,11 @@ class Joint(object):
             traj = self.doubleramp_profile(pos_i, vel_i, pos_f, vel_f,
                                            tf_sync, tf_lim, delta_t)
 
-        return traj
+        path = []
+        for (t, pos, vel, acc) in traj:
+            path.append((t, pos, vel, acc))
+
+        return path
 
     def trapezoidal_profile(self, pos_i, vel_i, pos_f, vel_f,
                             tf_sync, tf_lim, delta_t):
