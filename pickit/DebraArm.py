@@ -5,7 +5,7 @@ from pickit.Scara import Scara
 import numpy as np
 
 class DebraArm(Scara):
-    "Kinematics and Inverse kinematics of an arm on Debra (3dof + hand)"
+    "Kinematics and trajectory generation of an arm on Debra (3dof + hand)"
 
     def __init__(self, l1=1.0, l2=1.0,
                  theta1_constraints=JointMinMaxConstraint(-pi,pi, -2,2, -1,1),
@@ -225,11 +225,17 @@ class DebraArm(Scara):
         """
         # Determine current (start) state and final (target) state
         start_joints_pos = self.inverse_kinematics(start_pos)
-        self.compute_jacobian_inv()
+        try:
+            self.compute_jacobian_inv()
+        except:
+            pass
         start_joints_vel = self.get_joints_vel(start_vel)
 
         target_joints_pos = self.inverse_kinematics(target_pos)
-        self.compute_jacobian_inv()
+        try:
+            self.compute_jacobian_inv()
+        except:
+            pass
         target_joints_vel = self.get_joints_vel(target_vel)
 
         # Get synchronisation time
@@ -266,6 +272,9 @@ class DebraArm(Scara):
                                                  target_joints_vel.theta3,
                                                  tf_sync,
                                                  delta_t)
+
+        # Store new position of arm
+        self.inverse_kinematics(target_pos)
 
         return traj_theta1, traj_theta2, traj_z, traj_theta3
 
@@ -315,11 +324,17 @@ class DebraArm(Scara):
 
         # Determine current (start) state and final (target) state
         start_joints_pos = self.inverse_kinematics(start_pos)
-        self.compute_jacobian_inv()
+        try:
+            self.compute_jacobian_inv()
+        except:
+            pass
         start_joints_vel = self.get_joints_vel(start_vel)
 
         target_joints_pos = self.inverse_kinematics(target_pos)
-        self.compute_jacobian_inv()
+        try:
+            self.compute_jacobian_inv()
+        except:
+            pass
         target_joints_vel = self.get_joints_vel(target_vel)
 
         # Get synchronisation time
@@ -356,6 +371,9 @@ class DebraArm(Scara):
 
         th1, th2, z, th3, px, py, pz, pgrp = \
             self.xyz_to_joint_trajectory(traj_x, traj_y, traj_z, traj_gripper)
+
+        # Store new position of arm
+        self.inverse_kinematics(target_pos)
 
         if output == 'robot' or output == 'tool':
             return px, py, pz, pgrp
@@ -407,7 +425,10 @@ class DebraArm(Scara):
             acc = RobotSpacePoint(x[3], y[3], z[3], grp[3])
 
             joints_pos = self.inverse_kinematics(pos)
-            self.compute_jacobian_inv()
+            try:
+                self.compute_jacobian_inv()
+            except:
+                pass
             joints_vel = self.get_joints_vel(vel)
             joints_acc = self.get_joints_vel(acc)
 

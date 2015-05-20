@@ -24,7 +24,10 @@ Vector3D = namedtuple('Vector3D', ['x', 'y', 'z'])
 MinMaxConstraint = namedtuple('MinMaxConstraint', ['min', 'max'])
 JointMinMaxConstraint = namedtuple('JointMinMaxConstraint', ['pos_min', 'pos_max',
                                                              'vel_min', 'vel_max',
-                                                             'acc_min', 'acc_max',
-                                                            ])
+                                                             'acc_min', 'acc_max'])
+Workspace = namedtuple('Workspace', ['x_min', 'x_max',
+                                     'y_min', 'y_max',
+                                     'z_min', 'z_max',
+                                     'elbow_orientation'])
 
 TimeToDestination = namedtuple('TimeToDestination', ['t1', 't2', 'tf'])

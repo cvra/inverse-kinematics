@@ -4,7 +4,7 @@ from pickit.Joint import Joint
 import numpy as np
 
 class Scara(object):
-    "Kinematics and Inverse kinematics of a Scara (2dof planar arm)"
+    "Kinematics and trajectory generation of a Scara (2dof planar arm)"
 
     def __init__(self, l1=1.0, l2=1.0,
                  theta1_constraints=JointMinMaxConstraint(-pi,pi, -1,1, -1,1),
