@@ -3,6 +3,7 @@ from pickit.Datatypes import *
 from pickit.Scara import Scara
 from pickit.DebraArm import DebraArm
 import numpy as np
+import logging
 
 def merge_trajectories(traj_a, traj_b):
     """
@@ -116,16 +117,14 @@ class ArmManager(object):
         q3 = []
         q4 = []
 
-        print(start_pos, start_vel)
-
         linear_traj_is_unfeasible = False
         curve_traj_is_unfeasible = False
 
         try:
             q1, q2, q3, q4 = self.goto_workspace(start_pos, start_vel, target_pos, target_vel, shape, new_ws)
             # Try to go in desired shape
-        except ValueError as e:
-            print('Can\'t use desired shape, forcing joint space trajectory:', e)
+        except ValueError:
+            logging.warning("Can't use desired shape, forcing joint space trajectory.", exc_info=True)
             self.tool = start_pos
             self.arm.inverse_kinematics(self.tool)
             linear_traj_is_unfeasible = True
@@ -134,8 +133,8 @@ class ArmManager(object):
             try:
                 q1, q2, q3, q4 =  self.goto_workspace(start_pos, start_vel, target_pos, target_vel, 'curve', new_ws)
                 # If can't work it out, force joint space trajectory
-            except ValueError as f:
-                print('Can\'t go to target:', '... going home')
+            except ValueError:
+                logging.warning("Can't go to target, going home.", exc_info=True)
                 self.tool = start_pos
                 self.arm.inverse_kinematics(self.tool)
                 curve_traj_is_unfeasible = True
