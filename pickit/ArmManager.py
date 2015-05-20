@@ -165,7 +165,14 @@ class ArmManager(object):
 
         new_ws = self.workspace_containing_position(target_pos)
 
-        q1, q2, q3, q4 = self.goto_workspace(start_pos, start_vel, target_pos, target_vel, 'curve', new_ws)
+        try:
+            q1, q2, q3, q4 = self.goto_workspace(start_pos, start_vel, target_pos, target_vel, 'line', new_ws)
+            # Try to go straight
+        except ValueError as e:
+            self.tool = start_pos
+            self.arm.inverse_kinematics(self.tool)
+            q1, q2, q3, q4 =  self.goto_workspace(start_pos, start_vel, target_pos, target_vel, 'curve', new_ws)
+            # If can't work it out, force joint space trajectory
 
         return q1, q2, q3, q4, target_pos
 
